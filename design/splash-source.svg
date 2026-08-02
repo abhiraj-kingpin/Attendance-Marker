@@ -1,0 +1,49 @@
+<svg width="1200" height="1200" viewBox="0 0 1200 1200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="38%" r="75%">
+      <stop offset="0%" stop-color="#2E1D63" />
+      <stop offset="55%" stop-color="#120B34" />
+      <stop offset="100%" stop-color="#05040F" />
+    </radialGradient>
+    <radialGradient id="planet" cx="35%" cy="30%" r="75%">
+      <stop offset="0%" stop-color="#FFD8A8" />
+      <stop offset="35%" stop-color="#FB923C" />
+      <stop offset="75%" stop-color="#EA580C" />
+      <stop offset="100%" stop-color="#9A3412" />
+    </radialGradient>
+    <linearGradient id="ring" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#67E8F9" stop-opacity="0.2" />
+      <stop offset="50%" stop-color="#A5F3FC" stop-opacity="0.95" />
+      <stop offset="100%" stop-color="#67E8F9" stop-opacity="0.2" />
+    </linearGradient>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="10" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="1200" fill="url(#bg)" />
+
+  <g fill="#FFFFFF">
+    <circle cx="220" cy="260" r="4" opacity="0.9" />
+    <circle cx="340" cy="820" r="3.5" opacity="0.7" />
+    <circle cx="980" cy="320" r="3.5" opacity="0.8" />
+    <circle cx="930" cy="780" r="3" opacity="0.6" />
+    <circle cx="180" cy="650" r="3" opacity="0.5" />
+    <circle cx="820" cy="200" r="3" opacity="0.7" />
+    <circle cx="520" cy="960" r="3" opacity="0.6" />
+    <circle cx="1020" cy="600" r="2.5" opacity="0.5" />
+    <circle cx="120" cy="420" r="2.5" opacity="0.6" />
+  </g>
+
+  <ellipse cx="600" cy="620" rx="260" ry="78" fill="none" stroke="url(#ring)" stroke-width="12"
+    transform="rotate(-18 600 620)" filter="url(#glow)" opacity="0.55" />
+  <circle cx="600" cy="610" r="160" fill="url(#planet)" />
+  <circle cx="600" cy="610" r="160" fill="none" stroke="#FED7AA" stroke-width="2" opacity="0.3" />
+  <ellipse cx="600" cy="620" rx="260" ry="78" fill="none" stroke="url(#ring)" stroke-width="8"
+    transform="rotate(-18 600 620)" filter="url(#glow)"
+    stroke-dasharray="440 360" stroke-dashoffset="-200" />
+</svg>

@@ -1,0 +1,9 @@
+{
+  "appId": "com.attendancemarker.app",
+  "appName": "Attendance Marker",
+  "webDir": "dist",
+  "backgroundColor": "#0A0920",
+  "android": {
+    "backgroundColor": "#0A0920"
+  }
+}
