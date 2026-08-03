@@ -28,7 +28,7 @@ function NavTab({ tab, isActive, onChange }) {
 
 export default function BottomNav({ active, onChange }) {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-30 bg-surface border-t border-outline-variant safe-bottom">
+    <nav className="gpu-layer fixed bottom-0 left-0 right-0 z-30 bg-surface border-t border-outline-variant safe-bottom">
       <div className="mx-auto max-w-lg flex items-stretch justify-between px-1">
         {TABS.map((tab) => (
           <NavTab key={tab.key} tab={tab} isActive={tab.key === active} onChange={onChange} />

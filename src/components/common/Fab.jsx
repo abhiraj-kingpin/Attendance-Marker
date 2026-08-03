@@ -11,7 +11,7 @@ import Icon from './Icon';
  */
 export default function Fab({ icon, label, onClick, className = '' }) {
   return createPortal(
-    <div className="fixed inset-0 z-30 pointer-events-none">
+    <div className="gpu-layer fixed inset-0 z-30 pointer-events-none">
       <div className="relative mx-auto h-full max-w-lg">
         <motion.button
           onClick={onClick}

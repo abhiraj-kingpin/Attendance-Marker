@@ -95,4 +95,13 @@
     display: block;
     fill: currentColor;
   }
+
+  /* Forces its own stable GPU compositing layer so Android WebView doesn't
+     visibly jostle this fixed element during unrelated reflows elsewhere
+     on the page (a known WebView bug — otherwise ANY re-render anywhere
+     can make a position:fixed bar jump). */
+  .gpu-layer {
+    transform: translateZ(0);
+    will-change: transform;
+  }
 }
