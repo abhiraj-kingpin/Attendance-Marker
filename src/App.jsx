@@ -32,7 +32,7 @@ export default function App() {
   }, [reducedMotion]);
 
   return (
-    <div className="min-h-dvh relative bg-surface-variant">
+    <div className="min-h-screen relative bg-surface-variant">
       <Toaster
         position="top-center"
         toastOptions={{
