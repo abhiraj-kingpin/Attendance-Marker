@@ -10,14 +10,14 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'icons/*.png'],
+      includeAssets: ['favicon.png', 'apple-touch-icon.png', 'logo.png', 'icons/*.png'],
       manifest: {
         id: '/',
         name: 'Attendance Marker',
         short_name: 'Attendance',
         description: 'Attendance tracker, syllabus tracker, exam countdown & GPA calculator for college.',
-        theme_color: '#1B1140',
-        background_color: '#0A0920',
+        theme_color: '#4285F4',
+        background_color: '#FFFFFF',
         display: 'standalone',
         orientation: 'portrait-primary',
         start_url: '/',

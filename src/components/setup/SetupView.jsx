@@ -25,7 +25,7 @@ export default function SetupView() {
           layoutId="setupPill"
         />
       </div>
-      <div className="px-5 mt-4">
+      <div className="px-5 mt-4 pb-20">
         {section === 'subjects' && <SubjectsSection />}
         {section === 'timetable' && <TimetableSection />}
         {section === 'excluded' && <ExcludedRangesSection />}

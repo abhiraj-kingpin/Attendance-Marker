@@ -1,6 +1,4 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, CalendarOff, CalendarX2 } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import { attendanceKey } from '../../lib/attendance';
 import {
@@ -11,13 +9,29 @@ import {
   formatFriendly,
   isDateExcluded,
 } from '../../lib/dates';
+import { ICONS, NAV_ICONS } from '../../lib/icons';
 import AppHeader from '../layout/AppHeader';
 import ExamWidget from './ExamWidget';
 import ClassCard from './ClassCard';
+import CalendarSheet from './CalendarSheet';
 import EmptyState from '../common/EmptyState';
+import Icon from '../common/Icon';
+
+function DayNavButton({ icon, label, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="relative w-11 h-11 grid place-items-center rounded-full text-on-surface-secondary active:bg-surface-variant-2 transition-colors"
+      aria-label={label}
+    >
+      <Icon svg={icon} size={20} />
+    </button>
+  );
+}
 
 export default function TodayView({ onNavigate }) {
   const [date, setDate] = useState(todayISO());
+  const [calendarOpen, setCalendarOpen] = useState(false);
 
   const subjects = useStore((s) => s.subjects);
   const timetable = useStore((s) => s.timetable);
@@ -36,21 +50,10 @@ export default function TodayView({ onNavigate }) {
         title={isTodayISO(date) ? 'Today' : dayKey}
         subtitle={formatFriendly(date)}
         right={
-          <div className="flex items-center gap-1 glass-panel rounded-full p-1 shadow-pop-sm">
-            <button
-              onClick={() => setDate((d) => addDaysISO(d, -1))}
-              className="w-11 h-11 grid place-items-center rounded-full text-ink-200 active:scale-90 transition-transform"
-              aria-label="Previous day"
-            >
-              <ChevronLeft size={18} />
-            </button>
-            <button
-              onClick={() => setDate((d) => addDaysISO(d, 1))}
-              className="w-11 h-11 grid place-items-center rounded-full text-ink-200 active:scale-90 transition-transform"
-              aria-label="Next day"
-            >
-              <ChevronRight size={18} />
-            </button>
+          <div className="flex items-center gap-1">
+            <DayNavButton icon={NAV_ICONS.today.outlined} label="Open calendar" onClick={() => setCalendarOpen(true)} />
+            <DayNavButton icon={ICONS.chevronLeft} label="Previous day" onClick={() => setDate((d) => addDaysISO(d, -1))} />
+            <DayNavButton icon={ICONS.chevronRight} label="Next day" onClick={() => setDate((d) => addDaysISO(d, 1))} />
           </div>
         }
       />
@@ -59,7 +62,7 @@ export default function TodayView({ onNavigate }) {
         {!isTodayISO(date) && (
           <button
             onClick={() => setDate(todayISO())}
-            className="text-xs font-bold text-nova-300 underline mb-3"
+            className="text-sm font-medium text-g-blue mb-3"
           >
             Jump back to today
           </button>
@@ -68,19 +71,15 @@ export default function TodayView({ onNavigate }) {
         <ExamWidget onNavigate={onNavigate} />
 
         {excluded && (
-          <motion.div
-            initial={{ opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-2.5 bg-aurora-500/12 border border-aurora-400/40 text-aurora-400 rounded-2xl px-4 py-3 mb-4 font-bold text-sm"
-          >
-            <CalendarOff size={18} className="shrink-0" />
+          <div className="flex items-center gap-2.5 bg-g-green-container text-g-green-dark rounded-xl px-4 py-3 mb-4 font-medium text-sm">
+            <Icon svg={ICONS.eventBusy} size={20} className="shrink-0" />
             Excluded day — {excluded.label}. Nothing counts today.
-          </motion.div>
+          </div>
         )}
 
         {periods.length === 0 ? (
           <EmptyState
-            icon={CalendarX2}
+            icon={ICONS.eventBusy}
             title="No classes scheduled"
             subtitle={`Nothing on your ${dayKey} timetable. Add periods from the Setup tab.`}
           />
@@ -105,6 +104,13 @@ export default function TodayView({ onNavigate }) {
           </div>
         )}
       </div>
+
+      <CalendarSheet
+        open={calendarOpen}
+        onClose={() => setCalendarOpen(false)}
+        selectedDate={date}
+        onSelectDate={setDate}
+      />
     </div>
   );
 }

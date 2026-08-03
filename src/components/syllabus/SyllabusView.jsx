@@ -1,5 +1,5 @@
-import { BookOpen } from 'lucide-react';
 import { useStore } from '../../store/useStore';
+import { NAV_ICONS } from '../../lib/icons';
 import AppHeader from '../layout/AppHeader';
 import EmptyState from '../common/EmptyState';
 import SyllabusSubjectCard from './SyllabusSubjectCard';
@@ -17,7 +17,7 @@ export default function SyllabusView() {
       <div className="px-5">
         {subjects.length === 0 ? (
           <EmptyState
-            icon={BookOpen}
+            icon={NAV_ICONS.checklist.outlined}
             title="No subjects yet"
             subtitle="Add subjects from the Setup tab, then track topics here."
           />

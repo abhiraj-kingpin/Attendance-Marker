@@ -1,41 +1,58 @@
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X } from 'lucide-react';
+import Icon from './Icon';
+import { ICONS } from '../../lib/icons';
 
+/**
+ * Portaled to document.body for the same reason as Fab: the per-tab
+ * animated wrapper in App.jsx has a CSS transform, which would otherwise
+ * make `fixed` here anchor to that wrapper's content box instead of the
+ * real viewport.
+ */
 export default function BottomSheet({ open, onClose, title, children }) {
-  return (
+  return createPortal(
     <AnimatePresence>
       {open && (
         <>
           <motion.div
-            className="fixed inset-0 bg-space-950/70 backdrop-blur-[2px] z-40"
+            className="fixed inset-0 bg-black/40 z-40"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
             onClick={onClose}
           />
-          <motion.div
-            className="fixed left-0 right-0 bottom-0 z-50 mx-auto w-full max-w-lg"
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-          >
-            <div className="rounded-t-3xl bg-space-850/95 backdrop-blur-xl border-t border-x border-white/12 shadow-pop max-h-[85dvh] overflow-y-auto safe-bottom">
-              <div className="sticky top-0 bg-space-850/95 backdrop-blur-xl flex items-center justify-between px-5 pt-4 pb-2 border-b border-white/10 rounded-t-3xl">
-                <h3 className="font-display text-lg text-ink-50">{title}</h3>
-                <button
-                  onClick={onClose}
-                  className="w-11 h-11 grid place-items-center rounded-full bg-white/8 text-ink-200 active:scale-90 transition-transform"
-                  aria-label="Close"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-              <div className="px-5 py-4">{children}</div>
+          <div className="fixed inset-0 z-50 pointer-events-none">
+            <div className="relative mx-auto h-full max-w-lg">
+              <motion.div
+                className="pointer-events-auto absolute left-0 right-0 bottom-0"
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                transition={{ duration: 0.28, ease: [0.2, 0, 0, 1] }}
+              >
+                <div className="rounded-t-[28px] bg-surface shadow-elevation-3 max-h-[85dvh] overflow-y-auto safe-bottom">
+                  <div className="sticky top-0 bg-surface flex flex-col items-center pt-2.5 pb-1 rounded-t-[28px]">
+                    <span className="w-8 h-1 rounded-full bg-outline" />
+                  </div>
+                  <div className="sticky top-3 bg-surface flex items-center justify-between px-5 pt-1 pb-3">
+                    <h3 className="font-display font-medium text-lg text-on-surface">{title}</h3>
+                    <button
+                      onClick={onClose}
+                      className="relative w-11 h-11 grid place-items-center rounded-full text-on-surface-secondary active:bg-surface-variant-2 transition-colors"
+                      aria-label="Close"
+                    >
+                      <Icon svg={ICONS.close} size={20} />
+                    </button>
+                  </div>
+                  <div className="px-5 pb-4">{children}</div>
+                </div>
+              </motion.div>
             </div>
-          </motion.div>
+          </div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

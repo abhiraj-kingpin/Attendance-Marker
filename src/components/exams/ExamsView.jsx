@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Plus, Timer, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useStore } from '../../store/useStore';
 import { msUntil, isPastExam, todayISO } from '../../lib/dates';
 import { useTicker } from '../../lib/useTicker';
+import { ICONS, NAV_ICONS } from '../../lib/icons';
 import AppHeader from '../layout/AppHeader';
 import BottomSheet from '../common/BottomSheet';
 import EmptyState from '../common/EmptyState';
+import Fab from '../common/Fab';
+import Icon from '../common/Icon';
 import ExamCard from './ExamCard';
 
 const PRESETS = ['Mid-Sem', 'End-Sem', 'Practical', 'Viva', 'Quiz'];
@@ -52,45 +54,26 @@ export default function ExamsView() {
   return (
     <div>
       <AppHeader title="Exams" subtitle="Countdown to what's next" />
-      <div className="px-5">
-        <div className="flex justify-end mb-3">
-          <motion.button
-            whileTap={{ scale: 0.92 }}
-            onClick={openAdd}
-            className="flex items-center gap-1.5 bg-gradient-to-br from-nova-500 to-comet-500 text-white font-bold text-sm px-4 py-2.5 rounded-2xl shadow-glow-nova min-h-11"
-          >
-            <Plus size={16} /> Add exam
-          </motion.button>
-        </div>
-
+      <div className="px-5 pb-20">
         {exams.length === 0 ? (
-          <EmptyState icon={Timer} title="No exams yet" subtitle="Add an exam to start the countdown." />
+          <EmptyState icon={NAV_ICONS.timer.outlined} title="No exams yet" subtitle="Add an exam to start the countdown." />
         ) : (
           <>
             {upcoming.length === 0 ? (
-              <EmptyState icon={Timer} title="No upcoming exams" subtitle="All caught up — nice." />
+              <EmptyState icon={NAV_ICONS.timer.outlined} title="No upcoming exams" subtitle="All caught up — nice." />
             ) : (
               <div className="flex flex-col gap-2.5">
                 {upcoming.map((exam, i) => (
-                  <ExamCard
-                    key={exam.id}
-                    exam={exam}
-                    subject={subjectById[exam.subjectId]}
-                    onRemove={() => removeExam(exam.id)}
-                    index={i}
-                  />
+                  <ExamCard key={exam.id} exam={exam} subject={subjectById[exam.subjectId]} onRemove={() => removeExam(exam.id)} index={i} />
                 ))}
               </div>
             )}
 
             {past.length > 0 && (
               <div className="mt-5">
-                <button
-                  onClick={() => setPastOpen((o) => !o)}
-                  className="flex items-center gap-1.5 text-sm font-bold text-ink-400 mb-2 min-h-11"
-                >
-                  <motion.span animate={{ rotate: pastOpen ? 180 : 0 }} transition={{ duration: 0.25 }}>
-                    <ChevronDown size={16} />
+                <button onClick={() => setPastOpen((o) => !o)} className="flex items-center gap-1.5 text-sm font-medium text-on-surface-tertiary mb-2 min-h-11">
+                  <motion.span animate={{ rotate: pastOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                    <Icon svg={ICONS.arrowDown} size={18} />
                   </motion.span>
                   Past exams ({past.length})
                 </button>
@@ -103,14 +86,7 @@ export default function ExamsView() {
                       className="overflow-hidden flex flex-col gap-2.5"
                     >
                       {past.map((exam, i) => (
-                        <ExamCard
-                          key={exam.id}
-                          exam={exam}
-                          subject={subjectById[exam.subjectId]}
-                          onRemove={() => removeExam(exam.id)}
-                          past
-                          index={i}
-                        />
+                        <ExamCard key={exam.id} exam={exam} subject={subjectById[exam.subjectId]} onRemove={() => removeExam(exam.id)} past index={i} />
                       ))}
                     </motion.div>
                   )}
@@ -121,12 +97,14 @@ export default function ExamsView() {
         )}
       </div>
 
+      <Fab icon={ICONS.add} label="Add exam" onClick={openAdd} />
+
       <BottomSheet open={sheetOpen} onClose={() => setSheetOpen(false)} title="Add exam">
-        <label className="text-sm font-bold text-ink-300">Subject</label>
+        <label className="text-sm font-medium text-on-surface-secondary">Subject</label>
         <select
           value={subjectId}
           onChange={(e) => setSubjectId(e.target.value)}
-          className="mt-1.5 mb-3 w-full rounded-2xl border border-white/15 bg-space-800 focus:border-nova-400 outline-none px-4 py-3 font-semibold text-ink-50"
+          className="mt-1.5 mb-3 w-full rounded-lg border border-outline-variant bg-surface focus:border-g-blue outline-none px-4 py-3 font-medium text-on-surface"
         >
           <option value="">General / Other</option>
           {subjects.map((s) => (
@@ -136,14 +114,14 @@ export default function ExamsView() {
           ))}
         </select>
 
-        <label className="text-sm font-bold text-ink-300">Exam name / type</label>
+        <label className="text-sm font-medium text-on-surface-secondary">Exam name / type</label>
         <div className="flex gap-1.5 flex-wrap mt-1.5 mb-2">
           {PRESETS.map((p) => (
             <button
               key={p}
               onClick={() => setName(p)}
-              className={`px-3 py-2 rounded-full text-xs font-bold border min-h-11 ${
-                name === p ? 'bg-nova-500/25 border-nova-400/60 text-ink-50' : 'bg-white/5 border-white/10 text-ink-400'
+              className={`px-3 py-2 rounded-full text-xs font-medium border min-h-11 ${
+                name === p ? 'bg-g-blue-container border-g-blue text-g-blue-dark' : 'bg-surface border-outline-variant text-on-surface-tertiary'
               }`}
             >
               {p}
@@ -154,35 +132,35 @@ export default function ExamsView() {
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="e.g. Mid-Sem"
-          className="mb-3 w-full rounded-2xl border border-white/15 bg-white/5 focus:border-nova-400 outline-none px-4 py-3 font-semibold text-ink-50 placeholder:text-ink-500"
+          className="mb-3 w-full rounded-lg border border-outline-variant bg-surface focus:border-g-blue outline-none px-4 py-3 font-medium text-on-surface placeholder:text-on-surface-tertiary"
         />
 
         <div className="flex gap-3">
           <div className="flex-1">
-            <label className="text-sm font-bold text-ink-300">Date</label>
+            <label className="text-sm font-medium text-on-surface-secondary">Date</label>
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="mt-1.5 w-full rounded-2xl border border-white/15 bg-white/5 focus:border-nova-400 outline-none px-3 py-3 font-semibold text-ink-50"
+              className="mt-1.5 w-full rounded-lg border border-outline-variant bg-surface focus:border-g-blue outline-none px-3 py-3 font-medium text-on-surface"
             />
           </div>
           <div className="flex-1">
-            <label className="text-sm font-bold text-ink-300">Time (optional)</label>
+            <label className="text-sm font-medium text-on-surface-secondary">Time (optional)</label>
             <input
               type="time"
               value={time}
               onChange={(e) => setTime(e.target.value)}
-              className="mt-1.5 w-full rounded-2xl border border-white/15 bg-white/5 focus:border-nova-400 outline-none px-3 py-3 font-semibold text-ink-50"
+              className="mt-1.5 w-full rounded-lg border border-outline-variant bg-surface focus:border-g-blue outline-none px-3 py-3 font-medium text-on-surface"
             />
           </div>
         </div>
 
         <motion.button
-          whileTap={{ scale: 0.96 }}
+          whileTap={{ scale: 0.97 }}
           onClick={handleSave}
           disabled={!name.trim() || !date}
-          className="mt-4 w-full bg-gradient-to-br from-nova-500 to-comet-500 disabled:opacity-40 text-white font-bold py-3.5 rounded-2xl shadow-glow-nova"
+          className="mt-4 w-full bg-g-blue disabled:opacity-40 text-white font-medium py-3.5 rounded-full"
         >
           Add exam
         </motion.button>

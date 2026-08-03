@@ -1,20 +1,16 @@
-import { motion } from 'framer-motion';
+import Icon from './Icon';
 
-export default function EmptyState({ icon: Icon, title, subtitle, action }) {
+export default function EmptyState({ icon, title, subtitle, action }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col items-center text-center gap-2 py-10 px-6"
-    >
-      {Icon && (
-        <div className="w-16 h-16 rounded-full glass-panel grid place-items-center mb-1 shadow-glow-nova">
-          <Icon size={28} className="text-nova-300" />
+    <div className="flex flex-col items-center text-center gap-2 py-10 px-6">
+      {icon && (
+        <div className="w-16 h-16 rounded-full bg-surface-variant-2 grid place-items-center mb-1">
+          <Icon svg={icon} size={30} className="text-on-surface-tertiary" />
         </div>
       )}
-      <p className="font-display text-lg text-ink-100">{title}</p>
-      {subtitle && <p className="text-sm text-ink-400 max-w-xs">{subtitle}</p>}
+      <p className="font-display font-medium text-lg text-on-surface">{title}</p>
+      {subtitle && <p className="text-sm text-on-surface-tertiary max-w-xs">{subtitle}</p>}
       {action && <div className="mt-2">{action}</div>}
-    </motion.div>
+    </div>
   );
 }

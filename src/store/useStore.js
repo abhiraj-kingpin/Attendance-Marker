@@ -28,6 +28,9 @@ const initialState = {
     admissionPeriod: null, // 'before2024' | '2024plus'
     semesters: [],
   },
+  settings: {
+    attendanceTarget: 75,
+  },
 };
 
 export const useStore = create(
@@ -36,13 +39,19 @@ export const useStore = create(
       ...initialState,
 
       // ---------- Subjects ----------
-      addSubject(name) {
+      addSubject(name, options = {}) {
         const trimmed = name.trim();
         if (!trimmed) return;
         set((s) => ({
           subjects: [
             ...s.subjects,
-            { id: uid(), name: trimmed, colorIndex: s.subjects.length },
+            {
+              id: uid(),
+              name: trimmed,
+              colorIndex: s.subjects.length,
+              type: options.type === 'lab' ? 'lab' : 'theory',
+              credits: Number(options.credits) || 4,
+            },
           ],
         }));
       },
@@ -240,6 +249,12 @@ export const useStore = create(
             ),
           },
         }));
+      },
+
+      // ---------- Settings ----------
+      setAttendanceTarget(target) {
+        const clamped = Math.min(100, Math.max(1, Math.round(Number(target) || 75)));
+        set((s) => ({ settings: { ...s.settings, attendanceTarget: clamped } }));
       },
 
       // ---------- Danger zone ----------

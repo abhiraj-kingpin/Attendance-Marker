@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, Check } from 'lucide-react';
+import Icon from './Icon';
+import { ICONS } from '../../lib/icons';
 
-export default function ConfirmIconButton({ onConfirm, className = '', size = 16 }) {
+export default function ConfirmIconButton({ onConfirm, className = '', size = 18 }) {
   const [confirming, setConfirming] = useState(false);
   const timerRef = useRef(null);
 
@@ -24,10 +25,10 @@ export default function ConfirmIconButton({ onConfirm, className = '', size = 16
     <motion.button
       type="button"
       onClick={handleClick}
-      whileTap={{ scale: 0.88 }}
+      whileTap={{ scale: 0.92 }}
       layout
-      className={`inline-flex items-center justify-center rounded-full transition-colors min-w-11 min-h-11 px-2 ${
-        confirming ? 'bg-flare-500/90 text-white' : 'bg-white/8 text-ink-400'
+      className={`relative inline-flex items-center justify-center rounded-full transition-colors min-w-11 min-h-11 px-2 ${
+        confirming ? 'bg-g-red-container text-g-red-dark' : 'text-on-surface-tertiary hover:bg-surface-variant-2'
       } ${className}`}
     >
       <AnimatePresence mode="wait" initial={false}>
@@ -37,9 +38,9 @@ export default function ConfirmIconButton({ onConfirm, className = '', size = 16
             initial={{ scale: 0.6, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.6, opacity: 0 }}
-            className="flex items-center gap-1 px-2 text-xs font-bold whitespace-nowrap"
+            className="flex items-center gap-1 px-2 text-xs font-medium whitespace-nowrap"
           >
-            <Check size={size} /> Sure?
+            <Icon svg={ICONS.check} size={size} /> Sure?
           </motion.span>
         ) : (
           <motion.span
@@ -49,7 +50,7 @@ export default function ConfirmIconButton({ onConfirm, className = '', size = 16
             exit={{ scale: 0.6, opacity: 0 }}
             className="flex items-center justify-center"
           >
-            <Trash2 size={size} />
+            <Icon svg={ICONS.delete} size={size} />
           </motion.span>
         )}
       </AnimatePresence>

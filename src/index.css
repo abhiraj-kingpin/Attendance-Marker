@@ -1,70 +1,53 @@
 @import "tailwindcss";
-@import "@fontsource/space-grotesk/latin-500.css";
-@import "@fontsource/space-grotesk/latin-600.css";
-@import "@fontsource/space-grotesk/latin-700.css";
-@import "@fontsource/inter/latin-400.css";
-@import "@fontsource/inter/latin-500.css";
-@import "@fontsource/inter/latin-600.css";
-@import "@fontsource/inter/latin-700.css";
-@import "@fontsource/inter/latin-800.css";
+@import "@fontsource/roboto/latin-400.css";
+@import "@fontsource/roboto/latin-500.css";
+@import "@fontsource/roboto/latin-700.css";
 
 @theme {
-  --font-display: "Space Grotesk", ui-sans-serif, "Segoe UI", sans-serif;
-  --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+  /* Google Sans isn't publicly licensed for embedding, so headings use
+     Roboto Medium/Bold — still Google's real typeface, just not the
+     display cut. Body text is the actual Roboto Google apps use. */
+  --font-display: "Roboto", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Roboto", ui-sans-serif, system-ui, sans-serif;
 
-  /* deep-space surfaces */
-  --color-space-950: #05050f;
-  --color-space-900: #0a0920;
-  --color-space-850: #100e2c;
-  --color-space-800: #14123a;
-  --color-space-700: #1e1b4d;
-  --color-space-600: #2a2566;
+  /* Material 3 / Google baseline palette */
+  --color-g-blue: #4285f4;
+  --color-g-blue-container: #d3e3fd;
+  --color-g-blue-dark: #1a56db;
+  --color-g-red: #ea4335;
+  --color-g-red-container: #fce8e6;
+  --color-g-red-dark: #b3261e;
+  --color-g-yellow: #fbbc04;
+  --color-g-yellow-container: #feefc3;
+  --color-g-yellow-dark: #a35a00;
+  --color-g-green: #34a853;
+  --color-g-green-container: #e6f4ea;
+  --color-g-green-dark: #1e7e34;
 
-  /* light-on-dark text scale */
-  --color-ink-50: #f7f5ff;
-  --color-ink-100: #eae6ff;
-  --color-ink-200: #d6d1f5;
-  --color-ink-300: #b6afe0;
-  --color-ink-400: #9c94c9;
-  --color-ink-500: #8078b0;
-  --color-ink-600: #635c8f;
+  --color-surface: #ffffff;
+  --color-surface-variant: #f8f9fa;
+  --color-surface-variant-2: #f1f3f4;
+  --color-on-surface: #1f1f1f;
+  --color-on-surface-secondary: #444746;
+  --color-on-surface-tertiary: #5f6368;
+  --color-outline: #c4c7c5;
+  --color-outline-variant: #e8eaed;
 
-  /* primary accent: violet "nova" */
-  --color-nova-300: #c4b5fd;
-  --color-nova-400: #a78bfa;
-  --color-nova-500: #8b5cf6;
-  --color-nova-600: #7c3aed;
-
-  /* secondary accent: cyan "comet" */
-  --color-comet-300: #a5f3fc;
-  --color-comet-400: #22d3ee;
-  --color-comet-500: #06b6d4;
-
-  /* status accents */
-  --color-aurora-400: #34d399;
-  --color-aurora-500: #10b981;
-  --color-flare-400: #fb7185;
-  --color-flare-500: #f43f5e;
-  --color-solar-400: #fbbf24;
-  --color-solar-500: #f59e0b;
-
-  --shadow-pop: 0 10px 34px -8px rgba(0, 0, 0, 0.55);
-  --shadow-pop-sm: 0 6px 20px -6px rgba(0, 0, 0, 0.5);
-  --shadow-glow-nova: 0 0 26px rgba(139, 92, 246, 0.4);
-  --shadow-glow-comet: 0 0 22px rgba(34, 211, 238, 0.35);
+  --shadow-elevation-1: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+  --shadow-elevation-2: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 2px 6px 2px rgba(60, 64, 67, 0.15);
+  --shadow-elevation-3: 0 1px 3px 0 rgba(60, 64, 67, 0.3), 0 4px 8px 3px rgba(60, 64, 67, 0.15);
 }
 
 @layer base {
   html {
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior-y: none;
-    color-scheme: dark;
   }
 
   body {
     font-family: var(--font-body);
-    color: var(--color-ink-100);
-    background: var(--color-space-950);
+    color: var(--color-on-surface);
+    background: var(--color-surface-variant);
     min-height: 100dvh;
     margin: 0;
     -webkit-font-smoothing: antialiased;
@@ -72,6 +55,7 @@
 
   h1, h2, h3, h4, .font-display {
     font-family: var(--font-display);
+    font-weight: 500;
   }
 
   button {
@@ -79,12 +63,12 @@
   }
 
   input, select {
-    color-scheme: dark;
+    color-scheme: light;
   }
 
   ::selection {
-    background: var(--color-nova-500);
-    color: var(--color-ink-50);
+    background: var(--color-g-blue-container);
+    color: var(--color-g-blue-dark);
   }
 }
 
@@ -104,10 +88,11 @@
     padding-bottom: env(safe-area-inset-bottom);
   }
 
-  .glass-panel {
-    background: linear-gradient(160deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.03));
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+  /* Material Symbols SVGs are imported raw and injected via <span class="msym"> */
+  .msym svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    fill: currentColor;
   }
 }

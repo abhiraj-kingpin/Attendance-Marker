@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Tent } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useStore } from '../../store/useStore';
 import { formatShort, todayISO } from '../../lib/dates';
+import { ICONS } from '../../lib/icons';
 import Card from '../common/Card';
 import BottomSheet from '../common/BottomSheet';
 import EmptyState from '../common/EmptyState';
 import ConfirmIconButton from '../common/ConfirmIconButton';
+import Icon from '../common/Icon';
+import Fab from '../common/Fab';
 
 export default function ExcludedRangesSection() {
   const ranges = useStore((s) => s.excludedRanges);
@@ -37,78 +39,69 @@ export default function ExcludedRangesSection() {
 
   return (
     <div>
-      <p className="text-sm text-ink-400 font-semibold mb-3">
+      <p className="text-sm text-on-surface-tertiary font-medium mb-3">
         Days inside these ranges (camps, leave, holidays) are skipped entirely — no classes counted for or against you.
       </p>
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-sm font-bold text-ink-300">{ranges.length} range{ranges.length === 1 ? '' : 's'}</p>
-        <motion.button
-          whileTap={{ scale: 0.92 }}
-          onClick={openAdd}
-          className="flex items-center gap-1.5 bg-gradient-to-br from-nova-500 to-comet-500 text-white font-bold text-sm px-4 py-2.5 rounded-2xl shadow-glow-nova min-h-11"
-        >
-          <Plus size={16} /> Add range
-        </motion.button>
-      </div>
+      <p className="text-sm font-medium text-on-surface-secondary mb-3">{ranges.length} range{ranges.length === 1 ? '' : 's'}</p>
 
       {sorted.length === 0 ? (
-        <EmptyState icon={Tent} title="No excluded dates" subtitle="Add camps, leave, or holiday ranges here." />
+        <EmptyState icon={ICONS.eventBusy} title="No excluded dates" subtitle="Add camps, leave, or holiday ranges here." />
       ) : (
         <div className="flex flex-col gap-2.5">
-          {sorted.map((range, i) => (
-            <motion.div key={range.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
-              <Card className="flex items-center gap-3 p-3.5">
-                <span className="w-10 h-10 shrink-0 rounded-xl bg-aurora-500/15 grid place-items-center">
-                  <Tent size={18} className="text-aurora-400" />
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-ink-50 truncate">{range.label}</p>
-                  <p className="text-xs text-ink-400 font-semibold">
-                    {formatShort(range.start)} – {formatShort(range.end)}
-                  </p>
-                </div>
-                <ConfirmIconButton onConfirm={() => { removeExcludedRange(range.id); toast('Range removed'); }} />
-              </Card>
-            </motion.div>
+          {sorted.map((range) => (
+            <Card key={range.id} className="flex items-center gap-3 p-3.5">
+              <span className="w-10 h-10 shrink-0 rounded-full bg-g-green-container grid place-items-center">
+                <Icon svg={ICONS.eventBusy} size={18} className="text-g-green-dark" />
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-on-surface truncate">{range.label}</p>
+                <p className="text-xs text-on-surface-tertiary">
+                  {formatShort(range.start)} – {formatShort(range.end)}
+                </p>
+              </div>
+              <ConfirmIconButton onConfirm={() => { removeExcludedRange(range.id); toast('Range removed'); }} />
+            </Card>
           ))}
         </div>
       )}
 
+      <Fab icon={ICONS.add} label="Add range" onClick={openAdd} />
+
       <BottomSheet open={sheetOpen} onClose={() => setSheetOpen(false)} title="Add excluded range">
-        <label className="text-sm font-bold text-ink-300">Label</label>
+        <label className="text-sm font-medium text-on-surface-secondary">Label</label>
         <input
           autoFocus
           value={label}
           onChange={(e) => setLabel(e.target.value)}
           placeholder="e.g. NCC / Camp"
-          className="mt-1.5 mb-3 w-full rounded-2xl border border-white/15 bg-white/5 focus:border-nova-400 outline-none px-4 py-3 font-semibold text-ink-50 placeholder:text-ink-500"
+          className="mt-1.5 mb-3 w-full rounded-lg border border-outline-variant bg-surface focus:border-g-blue outline-none px-4 py-3 font-medium text-on-surface placeholder:text-on-surface-tertiary"
         />
         <div className="flex gap-3">
           <div className="flex-1">
-            <label className="text-sm font-bold text-ink-300">Start date</label>
+            <label className="text-sm font-medium text-on-surface-secondary">Start date</label>
             <input
               type="date"
               value={start}
               onChange={(e) => setStart(e.target.value)}
-              className="mt-1.5 w-full rounded-2xl border border-white/15 bg-white/5 focus:border-nova-400 outline-none px-3 py-3 font-semibold text-ink-50"
+              className="mt-1.5 w-full rounded-lg border border-outline-variant bg-surface focus:border-g-blue outline-none px-3 py-3 font-medium text-on-surface"
             />
           </div>
           <div className="flex-1">
-            <label className="text-sm font-bold text-ink-300">End date</label>
+            <label className="text-sm font-medium text-on-surface-secondary">End date</label>
             <input
               type="date"
               value={end}
               min={start}
               onChange={(e) => setEnd(e.target.value)}
-              className="mt-1.5 w-full rounded-2xl border border-white/15 bg-white/5 focus:border-nova-400 outline-none px-3 py-3 font-semibold text-ink-50"
+              className="mt-1.5 w-full rounded-lg border border-outline-variant bg-surface focus:border-g-blue outline-none px-3 py-3 font-medium text-on-surface"
             />
           </div>
         </div>
         <motion.button
-          whileTap={{ scale: 0.96 }}
+          whileTap={{ scale: 0.97 }}
           onClick={handleSave}
           disabled={!label.trim() || end < start}
-          className="mt-4 w-full bg-gradient-to-br from-nova-500 to-comet-500 disabled:opacity-40 text-white font-bold py-3.5 rounded-2xl shadow-glow-nova"
+          className="mt-4 w-full bg-g-blue disabled:opacity-40 text-white font-medium py-3.5 rounded-full"
         >
           Add range
         </motion.button>

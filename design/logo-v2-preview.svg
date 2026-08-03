@@ -1,0 +1,27 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- dark blue base disc (doubles as the "ring" showing around the lighter clock face, and the person's body/torso color) -->
+  <circle cx="256" cy="256" r="225" fill="#1A56C7" />
+
+  <!-- clock face -->
+  <circle cx="292" cy="238" r="172" fill="#3B9FE0" stroke="#FFFFFF" stroke-width="11" />
+  <line x1="292" y1="238" x2="292" y2="146" stroke="#FFFFFF" stroke-width="15" stroke-linecap="round" />
+  <line x1="292" y1="238" x2="350" y2="296" stroke="#FFFFFF" stroke-width="15" stroke-linecap="round" />
+  <circle cx="292" cy="238" r="13" fill="#FFFFFF" />
+  <circle cx="292" cy="238" r="6" fill="#1A56C7" />
+
+  <!-- person, overlapping the clock's lower-left -->
+  <path
+    d="M188 330
+       c-70 0 -112 46 -112 112
+       v70
+       h224
+       v-70
+       c0 -66 -42 -112 -112 -112
+       z"
+    fill="#1A56C7"
+    stroke="#FFFFFF"
+    stroke-width="11"
+    stroke-linejoin="round"
+  />
+  <circle cx="188" cy="278" r="78" fill="#3B9FE0" stroke="#FFFFFF" stroke-width="11" />
+</svg>

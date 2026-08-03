@@ -1,14 +1,14 @@
 import { isDateExcluded } from './dates';
 
-export const SAFE_THRESHOLD = 0.75;
+export const DEFAULT_TARGET = 0.75;
 const EPS = 1e-9;
 
 /**
  * Compute held/attended/percentage for one subject from the flat attendance
  * record map, ignoring "No Class" marks and anything inside an excluded
- * date range.
+ * date range. `target` is the attendance goal as a fraction (0.75 = 75%).
  */
-export function computeSubjectStats(subjectId, attendanceMap, excludedRanges) {
+export function computeSubjectStats(subjectId, attendanceMap, excludedRanges, target = DEFAULT_TARGET) {
   let held = 0;
   let attended = 0;
 
@@ -29,42 +29,43 @@ export function computeSubjectStats(subjectId, attendanceMap, excludedRanges) {
     attended,
     missed: held - attended,
     percentage,
-    ...liveAdvice(held, attended),
+    ...liveAdvice(held, attended, target),
   };
 }
 
 /**
- * The "75% rule" live calculator.
- * - If below threshold: how many classes in a row must be attended to
- *   climb back to >= 75%.
- * - If at/above threshold: how many classes can safely be missed in a row
- *   and stay >= 75%.
+ * The "target % rule" live calculator, generalized for any target fraction
+ * (not just 75%).
+ * - If below target: how many classes in a row must be attended to climb
+ *   back to >= target.
+ * - If at/above target: how many classes can safely be missed in a row and
+ *   stay >= target.
  */
-export function liveAdvice(held, attended) {
+export function liveAdvice(held, attended, target = DEFAULT_TARGET) {
   if (held === 0) {
     return { status: 'none', canMiss: 0, mustAttend: 0 };
   }
 
   const ratio = attended / held;
 
-  if (ratio + EPS >= SAFE_THRESHOLD) {
-    const canMiss = Math.max(0, Math.floor(attended / SAFE_THRESHOLD + EPS) - held);
+  if (ratio + EPS >= target) {
+    const canMiss = Math.max(0, Math.floor(attended / target + EPS) - held);
     return { status: 'safe', canMiss, mustAttend: 0 };
   }
 
-  const mustAttend = Math.max(0, Math.ceil(3 * held - 4 * attended - EPS));
+  const mustAttend = Math.max(0, Math.ceil((target * held - attended) / (1 - target) - EPS));
   return { status: 'risk', canMiss: 0, mustAttend };
 }
 
-export function computeAllSubjectStats(subjects, attendanceMap, excludedRanges) {
+export function computeAllSubjectStats(subjects, attendanceMap, excludedRanges, target = DEFAULT_TARGET) {
   const stats = {};
   for (const subject of subjects) {
-    stats[subject.id] = computeSubjectStats(subject.id, attendanceMap, excludedRanges);
+    stats[subject.id] = computeSubjectStats(subject.id, attendanceMap, excludedRanges, target);
   }
   return stats;
 }
 
-export function computeOverallStats(subjectStatsById) {
+export function computeOverallStats(subjectStatsById, target = DEFAULT_TARGET) {
   let held = 0;
   let attended = 0;
   for (const s of Object.values(subjectStatsById)) {
@@ -72,9 +73,32 @@ export function computeOverallStats(subjectStatsById) {
     attended += s.attended;
   }
   const percentage = held === 0 ? null : (attended / held) * 100;
-  return { held, attended, missed: held - attended, percentage, ...liveAdvice(held, attended) };
+  return { held, attended, missed: held - attended, percentage, ...liveAdvice(held, attended, target) };
 }
 
 export function attendanceKey(date, periodId) {
   return `${date}__${periodId}`;
+}
+
+/** Per-day attendance rollup for calendar cells: 'present' | 'absent' | 'mixed' | 'excluded' | null (no data). */
+export function dayStatus(date, periods, attendanceMap, excludedRanges) {
+  if (isDateExcluded(date, excludedRanges)) return 'excluded';
+  if (!periods || periods.length === 0) return null;
+
+  let sawPresent = false;
+  let sawAbsent = false;
+  let sawAny = false;
+
+  for (const period of periods) {
+    const record = attendanceMap[attendanceKey(date, period.id)];
+    if (!record || record.status === 'noclass') continue;
+    sawAny = true;
+    if (record.status === 'present') sawPresent = true;
+    if (record.status === 'absent') sawAbsent = true;
+  }
+
+  if (!sawAny) return null;
+  if (sawPresent && sawAbsent) return 'mixed';
+  if (sawAbsent) return 'absent';
+  return 'present';
 }
