@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { TABS } from '../../lib/tabs';
 import { NAV_ICONS } from '../../lib/icons';
 import Icon from '../common/Icon';
@@ -13,13 +12,7 @@ function NavTab({ tab, isActive, onChange }) {
       aria-label={tab.label}
     >
       <span className="relative flex items-center justify-center w-16 h-8">
-        {isActive && (
-          <motion.span
-            layoutId="navPill"
-            className="absolute inset-0 bg-g-blue-container rounded-full"
-            transition={{ duration: 0.2, ease: [0.2, 0, 0, 1] }}
-          />
-        )}
+        {isActive && <span className="absolute inset-0 bg-g-blue-container rounded-full" />}
         <Icon
           svg={isActive ? icons.filled : icons.outlined}
           size={24}
