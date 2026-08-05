@@ -256,11 +256,6 @@ export const useStore = create(
         const clamped = Math.min(100, Math.max(1, Math.round(Number(target) || 75)));
         set((s) => ({ settings: { ...s.settings, attendanceTarget: clamped } }));
       },
-
-      // ---------- Danger zone ----------
-      resetAll() {
-        set({ ...initialState, timetable: emptyTimetable() });
-      },
     }),
     {
       name: 'attendance-marker-college-companion',
