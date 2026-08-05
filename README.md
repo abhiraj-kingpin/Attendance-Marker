@@ -1,69 +1,61 @@
 # Attendance Marker
 
-A personal attendance tracker, syllabus tracker, exam countdown, and GPA
-calculator, styled to match Google's Material 3 design system (the same
-tokens, spacing, and components as Google Calendar/Tasks/Gmail). Ships both
-as an installable offline-first PWA and as a native Android app.
+Attendance Marker is a modern student productivity application that combines attendance management, syllabus tracking, exam planning, and GPA calculation into a single platform. Built with Google's Material 3 design principles, it is available as both an offline-first Progressive Web App (PWA) and a native Android application.
 
 ## Features
 
-- **Timetable & subjects** — build a weekly Mon–Sun timetable from your subjects, each with a colored avatar.
-- **Daily attendance** — mark Present / Absent / No Class per period, with prev/next day navigation.
-- **75% rule calculator** — live per-subject and overall attendance %, with how-many-to-attend / how-many-you-can-miss guidance.
-- **Excluded date ranges** — camps, leave, or holidays that don't count for or against attendance.
-- **Syllabus tracker** — per-subject topic checklists with progress bars.
-- **Exam countdown** — live days/hours countdown, urgent flag inside 3 days, collapsible past exams.
-- **GPA calculator** — GGSIPU Ordinance 11 grading (SGPA/CGPA), with the pre/post-2024 percentage formula toggle.
+- Smart attendance tracking with Present, Absent, and No Class status
+- Weekly timetable management
+- Live 75% attendance calculator with attendance predictions
+- Subject-wise attendance analytics
+- Excluded date ranges for holidays and leave
+- Syllabus progress tracker
+- Exam countdown with urgency alerts
+- SGPA & CGPA calculator (GGSIPU Ordinance 11)
+- Offline-first data storage using Zustand and LocalStorage
+- Responsive Material 3 inspired interface
+- Native Android support using Capacitor
 
-All data is stored locally (localStorage via Zustand) — nothing leaves your device.
+## Tech Stack
 
-## Stack
+- React
+- Vite
+- JavaScript
+- Tailwind CSS v4
+- Zustand
+- Framer Motion
+- Capacitor
+- Progressive Web App (PWA)
+- Android (Gradle)
 
-React + Vite (rolldown-vite), Tailwind CSS v4, Framer Motion, Zustand, Google
-Material Symbols (`@material-symbols/svg-400`), `vite-plugin-pwa`, Capacitor
-(Android). Typography is Roboto — Google's own display face ("Google Sans")
-isn't publicly licensed for embedding in third-party apps, so headings use
-Roboto Medium/Bold instead.
-
-## Web development
+## Installation
 
 ```bash
 npm install
-npm run dev      # start dev server
-npm run build    # production build (also generates the service worker)
-npm run preview  # preview the production build
-npm run lint      # oxlint
+npm run dev
 ```
 
-## Android (native app via Capacitor)
-
-Requires Android Studio + SDK installed locally (used for both the JDK and
-the SDK/build-tools — no separate Java install needed).
+## Production Build
 
 ```bash
-npm run android:build   # web build + cap sync + gradle assembleDebug
+npm run build
+npm run preview
 ```
 
-The signed-for-debug APK lands at
-`android/app/build/outputs/apk/debug/app-debug.apk` — sideload it directly,
-or run `npm run android:open` to open the project in Android Studio and
-build/run from there (needed for a release build with your own signing key).
-
-## Regenerating design assets
-
-The app icon/logo is `design/logo-original.png` (the real exported source
-file — not hand-drawn). One script derives every size the app needs —
-favicon, PWA icons (incl. maskable), Android launcher icons (legacy, round,
-and adaptive foreground, all 5 densities), and the Android splash screens
-(all density/orientation variants) — by trimming that source and compositing
-it at the right scale/background for each target:
+## Android Build
 
 ```bash
-npm install -D sharp
-node design/generate-all-from-logo.mjs
-npm uninstall sharp
+npm run android:build
 ```
 
-If you replace `design/logo-original.png` with a new export, just re-run the
-script above, then `npm run android:sync` (or `npm run android:build`) so
-the native project picks up the refreshed assets.
+## Project Goals
+
+- Help students maintain attendance efficiently.
+- Track syllabus completion throughout the semester.
+- Monitor upcoming examinations.
+- Calculate SGPA and CGPA accurately.
+- Deliver a smooth offline-first experience across web and Android.
+
+## License
+
+This project is developed for educational purposes.
