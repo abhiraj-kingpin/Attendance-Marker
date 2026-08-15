@@ -1,4 +1,5 @@
 import { DAYS } from './dates';
+import { classifyEntry } from './classifyTimetableEntry';
 
 const DAY_PATTERNS = [
   { key: 'Mon', re: /\bmon(day)?\b/i },
@@ -10,9 +11,16 @@ const DAY_PATTERNS = [
   { key: 'Sun', re: /\bsun(day)?\b/i },
 ];
 
-const NOISE_RE = /^(\d{1,2}[:.]\d{2}\s*[-–]?\s*)?(\d{1,2}[:.]\d{2})?$|^p(eriod)?\.?\s*\d+$|^\d+\.?$|^lunch$|^break$/i;
+const NOISE_RE = /^(\d{1,2}[:.]\d{2}\s*[-–]?\s*)?(\d{1,2}[:.]\d{2})?$|^p(eriod)?\.?\s*\d+$|^\d+\.?$/i;
 
-export function parseTimetableText(lines) {
+const CONFIDENCE_THRESHOLD = 70;
+
+// Groups raw OCR lines by day, then classifies each into a subject/teacher/
+// room/break-activity guess. A "merge-only" line (just a teacher name or
+// just a room number, on its own OCR line) attaches to the entry above it
+// rather than becoming its own row — timetables usually OCR one cell as
+// several consecutive lines.
+export function parseTimetableText(lines, known = {}) {
   const result = {};
   for (const day of DAYS) result[day] = [];
 
@@ -25,15 +33,42 @@ export function parseTimetableText(lines) {
     if (dayMatch) {
       currentDay = dayMatch.key;
       const remainder = line.replace(dayMatch.re, '').replace(/^[:\-–\s]+/, '').trim();
-      if (remainder && !NOISE_RE.test(remainder)) {
-        result[currentDay].push(remainder);
-      }
+      if (remainder) pushEntry(result, currentDay, remainder, known);
       continue;
     }
 
     if (!currentDay || NOISE_RE.test(line)) continue;
-    result[currentDay].push(line);
+    pushEntry(result, currentDay, line, known);
   }
 
   return result;
 }
+
+function pushEntry(result, day, rawLine, known) {
+  const entry = classifyEntry(rawLine, known);
+  if (!entry) return;
+
+  if (entry.mergeOnly) {
+    const list = result[day];
+    const prev = list[list.length - 1];
+    if (prev) {
+      if (entry.teacher && !prev.teacher) prev.teacher = entry.teacher;
+      if (entry.room && !prev.room) prev.room = entry.room;
+      return;
+    }
+    // Nothing to merge into — surface it as its own low-confidence row
+    // rather than silently dropping a line the user might recognize.
+  }
+
+  result[day].push({
+    raw: entry.raw,
+    subject: entry.subject ?? (entry.mergeOnly ? entry.raw : ''),
+    teacher: entry.teacher,
+    room: entry.room,
+    isBreakActivity: entry.isBreakActivity,
+    confidence: entry.confidence,
+    included: !entry.isBreakActivity && entry.confidence >= CONFIDENCE_THRESHOLD,
+  });
+}
+
+export { CONFIDENCE_THRESHOLD };

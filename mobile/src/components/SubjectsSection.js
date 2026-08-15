@@ -24,6 +24,8 @@ function SubjectRow({ subject, onEdit, onRemove, colors }) {
         <Text className="font-medium text-on-surface">{subject.name}</Text>
         <Text className="text-xs text-on-surface-tertiary">
           {subject.credits ?? 4} credit{(subject.credits ?? 4) === 1 ? '' : 's'}
+          {subject.teacher ? ` · ${subject.teacher}` : ''}
+          {subject.room ? ` · Room ${subject.room}` : ''}
         </Text>
       </View>
       <TouchableOpacity onPress={onEdit} className="w-11 h-11 items-center justify-center rounded-full">
@@ -46,12 +48,16 @@ const SubjectsSection = forwardRef(function SubjectsSection(_props, ref) {
   const [name, setName] = useState('');
   const [type, setType] = useState('theory');
   const [credits, setCredits] = useState('4');
+  const [teacher, setTeacher] = useState('');
+  const [room, setRoom] = useState('');
 
   function openAdd() {
     setEditing(null);
     setName('');
     setType('theory');
     setCredits('4');
+    setTeacher('');
+    setRoom('');
     setSheetOpen(true);
   }
 
@@ -62,6 +68,8 @@ const SubjectsSection = forwardRef(function SubjectsSection(_props, ref) {
     setName(subject.name);
     setType(subject.type === 'lab' ? 'lab' : 'theory');
     setCredits(String(subject.credits ?? 4));
+    setTeacher(subject.teacher ?? '');
+    setRoom(subject.room ?? '');
     setSheetOpen(true);
   }
 
@@ -69,9 +77,9 @@ const SubjectsSection = forwardRef(function SubjectsSection(_props, ref) {
     const trimmed = name.trim();
     if (!trimmed) return;
     if (editing) {
-      updateSubject(editing.id, { name: trimmed, type, credits: Number(credits) || 4 });
+      updateSubject(editing.id, { name: trimmed, type, credits: Number(credits) || 4, teacher: teacher.trim() || null, room: room.trim() || null });
     } else {
-      addSubject(trimmed, { type, credits });
+      addSubject(trimmed, { type, credits, teacher, room });
     }
     setSheetOpen(false);
   }
@@ -146,6 +154,27 @@ const SubjectsSection = forwardRef(function SubjectsSection(_props, ref) {
               keyboardType="number-pad"
               value={credits}
               onChangeText={setCredits}
+              className="rounded-lg border border-outline-variant px-3 py-3 text-center font-medium text-on-surface"
+            />
+          </View>
+        </View>
+
+        <View className="flex-row gap-3 mt-3">
+          <View className="flex-1">
+            <Text className="text-sm font-medium text-on-surface-secondary mb-1.5">Teacher (optional)</Text>
+            <TextInput
+              value={teacher}
+              onChangeText={setTeacher}
+              placeholder="e.g. Dr. Sharma"
+              className="rounded-lg border border-outline-variant px-3 py-3 font-medium text-on-surface"
+            />
+          </View>
+          <View className="w-24">
+            <Text className="text-sm font-medium text-on-surface-secondary mb-1.5">Room</Text>
+            <TextInput
+              value={room}
+              onChangeText={setRoom}
+              placeholder="431"
               className="rounded-lg border border-outline-variant px-3 py-3 text-center font-medium text-on-surface"
             />
           </View>

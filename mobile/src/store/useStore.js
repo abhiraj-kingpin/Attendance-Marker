@@ -43,6 +43,9 @@ export const initialState = {
   excludedRanges: [],
   syllabus: {},
   exams: [],
+  // Non-subject entries (Library, NCC, ...) the user has confirmed aren't
+  // subjects, keyed lowercase — checked before scan heuristics next time.
+  learnedActivities: [],
   gpa: {
     admissionPeriod: null,
     semesters: [],
@@ -75,9 +78,16 @@ export const useStore = create(
               colorIndex: s.subjects.length,
               type: options.type === 'lab' ? 'lab' : 'theory',
               credits: Number(options.credits) || 4,
+              teacher: options.teacher?.trim() || null,
+              room: options.room?.trim() || null,
             },
           ],
         }));
+      },
+      learnActivity(text) {
+        const trimmed = text.trim().toLowerCase();
+        if (!trimmed) return;
+        set((s) => (s.learnedActivities.includes(trimmed) ? s : { learnedActivities: [...s.learnedActivities, trimmed] }));
       },
       updateSubject(id, patch) {
         set((s) => ({

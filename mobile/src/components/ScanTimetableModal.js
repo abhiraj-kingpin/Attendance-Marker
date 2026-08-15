@@ -6,14 +6,17 @@ import TextRecognition from '@react-native-ml-kit/text-recognition';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStore } from '../store/useStore';
 import { DAYS, DAY_LABELS } from '../lib/dates';
-import { parseTimetableText } from '../lib/parseTimetableText';
+import { parseTimetableText, CONFIDENCE_THRESHOLD } from '../lib/parseTimetableText';
+import { buildKnownDictionary } from '../lib/classifyTimetableEntry';
 import { useTheme } from '../lib/useTheme';
 
 export default function ScanTimetableModal({ open, onClose }) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const subjects = useStore((s) => s.subjects);
+  const learnedActivities = useStore((s) => s.learnedActivities);
   const addSubject = useStore((s) => s.addSubject);
+  const learnActivity = useStore((s) => s.learnActivity);
   const setTimetable = useStore((s) => s.setTimetable);
   const timetable = useStore((s) => s.timetable);
 
@@ -57,7 +60,8 @@ export default function ScanTimetableModal({ open, onClose }) {
     try {
       const recognized = await TextRecognition.recognize(uri);
       const lines = recognized.blocks.flatMap((b) => b.lines.map((l) => l.text));
-      const parsed = parseTimetableText(lines);
+      const known = buildKnownDictionary(subjects, learnedActivities);
+      const parsed = parseTimetableText(lines, known);
       setDraft(parsed);
       setStep('review');
     } catch (e) {
@@ -66,10 +70,18 @@ export default function ScanTimetableModal({ open, onClose }) {
     }
   }
 
-  function updateEntry(day, idx, text) {
+  function updateField(day, idx, field, value) {
     setDraft((d) => {
       const next = { ...d, [day]: [...d[day]] };
-      next[day][idx] = text;
+      next[day][idx] = { ...next[day][idx], [field]: value };
+      return next;
+    });
+  }
+
+  function toggleIncluded(day, idx) {
+    setDraft((d) => {
+      const next = { ...d, [day]: [...d[day]] };
+      next[day][idx] = { ...next[day][idx], included: !next[day][idx].included };
       return next;
     });
   }
@@ -79,7 +91,10 @@ export default function ScanTimetableModal({ open, onClose }) {
   }
 
   function addEntry(day) {
-    setDraft((d) => ({ ...d, [day]: [...d[day], ''] }));
+    setDraft((d) => ({
+      ...d,
+      [day]: [...d[day], { raw: '', subject: '', teacher: null, room: null, isBreakActivity: false, confidence: 100, included: true }],
+    }));
   }
 
   function handleSave() {
@@ -87,18 +102,29 @@ export default function ScanTimetableModal({ open, onClose }) {
     const nextTimetable = { ...timetable };
 
     for (const day of DAYS) {
-      const names = (draft[day] || []).map((n) => n.trim()).filter(Boolean);
-      if (names.length === 0) continue;
+      const entries = (draft[day] || []).filter((e) => e.included && e.subject?.trim());
+
+      // Anything the user unchecked that scanning had flagged as a break
+      // activity is a confirmed correction — remember it for next scan.
+      for (const e of draft[day] || []) {
+        if (!e.included && e.isBreakActivity && e.raw) learnActivity(e.raw);
+      }
 
       const periods = [];
-      for (const name of names) {
+      for (const entry of entries) {
+        const name = entry.subject.trim();
         const key = name.toLowerCase();
         let subject = byName.get(key);
         if (!subject) {
-          addSubject(name, {});
+          addSubject(name, { teacher: entry.teacher, room: entry.room });
           const created = useStore.getState().subjects.find((s) => s.name.trim().toLowerCase() === key);
           subject = created;
           if (subject) byName.set(key, subject);
+        } else if (entry.teacher || entry.room) {
+          useStore.getState().updateSubject(subject.id, {
+            teacher: subject.teacher || entry.teacher || null,
+            room: subject.room || entry.room || null,
+          });
         }
         if (subject) periods.push({ id: `${subject.id}-${day}-${periods.length}-${Date.now()}`, subjectId: subject.id });
       }
@@ -153,8 +179,8 @@ export default function ScanTimetableModal({ open, onClose }) {
           <>
             <ScrollView className="flex-1 px-5 pt-4" contentContainerStyle={{ paddingBottom: 24 }}>
               <Text className="text-sm text-on-surface-tertiary mb-4">
-                Review what was detected — edit, remove, or add classes for each day, then save. Saving replaces that
-                day's timetable.
+                Review what was detected — some entries are flagged as unsure or as non-class activities. Edit, check off, or
+                remove them, then save. Saving replaces that day's timetable.
               </Text>
               {DAYS.map((day) => (
                 <View key={day} className="mb-5">
@@ -163,18 +189,56 @@ export default function ScanTimetableModal({ open, onClose }) {
                     <Text className="text-sm text-on-surface-tertiary mb-2">Nothing detected</Text>
                   )}
                   <View className="gap-2">
-                    {(draft[day] || []).map((name, idx) => (
-                      <View key={idx} className="flex-row items-center gap-2">
-                        <TextInput
-                          value={name}
-                          onChangeText={(v) => updateEntry(day, idx, v)}
-                          className="flex-1 rounded-lg border border-outline-variant px-3 py-2.5 text-sm font-medium text-on-surface"
-                        />
-                        <TouchableOpacity onPress={() => removeEntry(day, idx)} className="w-9 h-9 items-center justify-center">
-                          <MaterialIcons name="delete-outline" size={18} color={colors.onSurfaceTertiary} />
-                        </TouchableOpacity>
-                      </View>
-                    ))}
+                    {(draft[day] || []).map((entry, idx) => {
+                      const flagged = entry.isBreakActivity || entry.confidence < CONFIDENCE_THRESHOLD;
+                      return (
+                        <View
+                          key={idx}
+                          className="rounded-lg border px-3 py-2.5"
+                          style={{ borderColor: flagged ? colors.gYellow : colors.outlineVariant, backgroundColor: flagged ? colors.gYellowContainer : colors.surface }}
+                        >
+                          {flagged && (
+                            <Text className="text-xs font-medium mb-1.5" style={{ color: colors.gYellowDark }}>
+                              {entry.isBreakActivity
+                                ? `"${entry.raw}" looks like a break/activity, not a subject — add anyway?`
+                                : `Not sure about "${entry.raw}" — check the fields below.`}
+                            </Text>
+                          )}
+                          <View className="flex-row items-center gap-2">
+                            <TouchableOpacity onPress={() => toggleIncluded(day, idx)} className="w-9 h-9 items-center justify-center">
+                              <MaterialIcons
+                                name={entry.included ? 'check-box' : 'check-box-outline-blank'}
+                                size={20}
+                                color={entry.included ? colors.gBlue : colors.onSurfaceTertiary}
+                              />
+                            </TouchableOpacity>
+                            <TextInput
+                              value={entry.subject ?? ''}
+                              onChangeText={(v) => updateField(day, idx, 'subject', v)}
+                              placeholder="Subject name"
+                              className="flex-1 rounded-lg border border-outline-variant px-3 py-2 text-sm font-medium text-on-surface"
+                            />
+                            <TouchableOpacity onPress={() => removeEntry(day, idx)} className="w-9 h-9 items-center justify-center">
+                              <MaterialIcons name="delete-outline" size={18} color={colors.onSurfaceTertiary} />
+                            </TouchableOpacity>
+                          </View>
+                          <View className="flex-row gap-2 mt-2 ml-11">
+                            <TextInput
+                              value={entry.teacher ?? ''}
+                              onChangeText={(v) => updateField(day, idx, 'teacher', v)}
+                              placeholder="Teacher (optional)"
+                              className="flex-1 rounded-lg border border-outline-variant px-3 py-2 text-xs text-on-surface"
+                            />
+                            <TextInput
+                              value={entry.room ?? ''}
+                              onChangeText={(v) => updateField(day, idx, 'room', v)}
+                              placeholder="Room (optional)"
+                              className="w-24 rounded-lg border border-outline-variant px-3 py-2 text-xs text-on-surface"
+                            />
+                          </View>
+                        </View>
+                      );
+                    })}
                   </View>
                   <TouchableOpacity onPress={() => addEntry(day)} className="flex-row items-center gap-1 mt-2 min-h-11">
                     <MaterialIcons name="add" size={16} color="#4285F4" />
