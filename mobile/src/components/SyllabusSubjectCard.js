@@ -7,6 +7,13 @@ import LinearProgress from './LinearProgress';
 import PasteSyllabusModal from './PasteSyllabusModal';
 import { colorForSubject } from '../lib/colors';
 import { useTheme } from '../lib/useTheme';
+import { predictSyllabusProgress } from '../lib/predictSyllabusProgress';
+
+const STATUS_COPY = {
+  ahead: (n) => `Ahead by ${n} ${n === 1 ? 'unit' : 'units'} — nice.`,
+  behind: (n) => `Behind by ${Math.abs(n)} ${Math.abs(n) === 1 ? 'unit' : 'units'}.`,
+  'on-track': () => 'Right on pace.',
+};
 
 const NO_UNIT = '__none__';
 
@@ -62,11 +69,12 @@ function UnitGroup({ name, topics, color, colors, onToggle, onRemove, startOpen 
   );
 }
 
-export default function SyllabusSubjectCard({ subject, topics, onAddTopic, onToggleTopic, onRemoveTopic, onImportUnits, startOpen }) {
+export default function SyllabusSubjectCard({ subject, topics, onAddTopic, onToggleTopic, onRemoveTopic, onImportUnits, onSetCommencementDate, startOpen }) {
   const { colors } = useTheme();
   const [open, setOpen] = useState(!!startOpen);
   const [draft, setDraft] = useState('');
   const [pasteOpen, setPasteOpen] = useState(false);
+  const [dateDraft, setDateDraft] = useState(subject.commencementDate || '');
   const color = colorForSubject(subject);
 
   const done = topics.filter((t) => t.done).length;
@@ -85,6 +93,19 @@ export default function SyllabusSubjectCard({ subject, topics, onAddTopic, onTog
     }
     group.topics.push(topic);
   }
+
+  const namedGroups = groups.filter((g) => g.name);
+  const lastStartedIndex = namedGroups.reduce(
+    (acc, g, i) => (g.topics.some((t) => t.done) ? i : acc),
+    null
+  );
+  const prediction = subject.commencementDate && namedGroups.length > 1
+    ? predictSyllabusProgress({
+        blocks: namedGroups,
+        commencementDate: subject.commencementDate,
+        userReportedIndex: lastStartedIndex,
+      })
+    : null;
 
   function submitTopic() {
     if (!draft.trim()) return;
@@ -111,6 +132,41 @@ export default function SyllabusSubjectCard({ subject, topics, onAddTopic, onTog
 
       {open && (
         <View className="pt-4">
+          {namedGroups.length > 1 && (
+            <View className="mb-3">
+              <View className="flex-row items-center gap-2">
+                <Text className="text-xs font-medium text-on-surface-secondary">Classes started on</Text>
+                <TextInput
+                  value={dateDraft}
+                  onChangeText={setDateDraft}
+                  onBlur={() => onSetCommencementDate?.(dateDraft.trim() || null)}
+                  placeholder="YYYY-MM-DD"
+                  className="rounded-lg border border-outline-variant px-2.5 py-1.5 text-xs font-medium text-on-surface"
+                />
+              </View>
+              {prediction && prediction.status !== 'no-data' && (
+                <View
+                  className="flex-row items-center gap-2 mt-2 rounded-lg px-3 py-2"
+                  style={{ backgroundColor: prediction.status === 'behind' ? colors.gYellowContainer : colors.gGreenContainer }}
+                >
+                  <MaterialIcons
+                    name={prediction.status === 'behind' ? 'schedule' : 'trending-up'}
+                    size={16}
+                    color={prediction.status === 'behind' ? colors.gYellowDark : colors.gGreenDark}
+                  />
+                  <Text
+                    className="flex-1 text-xs font-medium"
+                    style={{ color: prediction.status === 'behind' ? colors.gYellowDark : colors.gGreenDark }}
+                  >
+                    Expected around {prediction.expectedLabel}.{' '}
+                    {prediction.status === 'unknown'
+                      ? 'Mark a topic done to compare your actual progress.'
+                      : STATUS_COPY[prediction.status]?.(prediction.aheadBy)}
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
           {groups.map((group) =>
             group.name ? (
               <UnitGroup

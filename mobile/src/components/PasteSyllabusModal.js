@@ -1,8 +1,11 @@
 import { useState } from 'react';
-import { Modal, View, Text, TouchableOpacity, ScrollView, TextInput } from 'react-native';
+import { Modal, View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as DocumentPicker from 'expo-document-picker';
+import { File } from 'expo-file-system';
 import { parseSyllabusText } from '../lib/parseSyllabusText';
+import { extractPdfText } from '../lib/extractPdfText';
 import { useTheme } from '../lib/useTheme';
 
 export default function PasteSyllabusModal({ open, onClose, subjectName, onSave }) {
@@ -11,11 +14,17 @@ export default function PasteSyllabusModal({ open, onClose, subjectName, onSave 
   const [step, setStep] = useState('paste');
   const [raw, setRaw] = useState('');
   const [units, setUnits] = useState([]);
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const [pdfError, setPdfError] = useState(null);
+  const [pdfPartial, setPdfPartial] = useState(false);
 
   function reset() {
     setStep('paste');
     setRaw('');
     setUnits([]);
+    setPdfBusy(false);
+    setPdfError(null);
+    setPdfPartial(false);
   }
 
   function handleClose() {
@@ -23,14 +32,38 @@ export default function PasteSyllabusModal({ open, onClose, subjectName, onSave 
     onClose();
   }
 
-  function handleParse() {
-    const parsed = parseSyllabusText(raw);
-    if (parsed.length === 0) {
-      setUnits([{ name: 'General', topics: [] }]);
-    } else {
-      setUnits(parsed);
-    }
+  function parseAndReview(text) {
+    const parsed = parseSyllabusText(text);
+    setUnits(parsed.length === 0 ? [{ name: 'General', topics: [] }] : parsed);
     setStep('review');
+  }
+
+  function handleParse() {
+    parseAndReview(raw);
+  }
+
+  async function handlePickPdf() {
+    setPdfError(null);
+    const result = await DocumentPicker.getDocumentAsync({ type: 'application/pdf' });
+    if (result.canceled || !result.assets?.[0]) return;
+
+    setPdfBusy(true);
+    try {
+      const file = new File(result.assets[0].uri);
+      const buffer = await file.arrayBuffer();
+      const { text, partial } = extractPdfText(new Uint8Array(buffer));
+      if (!text.trim()) {
+        setPdfError('Could not find readable text in that PDF — it may be a scanned/image-only document. Try pasting the text instead.');
+        return;
+      }
+      setPdfPartial(partial);
+      setRaw(text);
+      parseAndReview(text);
+    } catch (e) {
+      setPdfError('Could not read that PDF. Try pasting the text instead.');
+    } finally {
+      setPdfBusy(false);
+    }
   }
 
   function updateTopic(unitIdx, topicIdx, text) {
@@ -104,6 +137,19 @@ export default function PasteSyllabusModal({ open, onClose, subjectName, onSave 
               (or "Unit I", "Unit II") wherever the source breaks it up — everything else gets grouped under whichever
               unit it falls under, or "General" if there's no unit heading at all.
             </Text>
+            <TouchableOpacity
+              onPress={handlePickPdf}
+              disabled={pdfBusy}
+              className="flex-row items-center justify-center gap-2 rounded-lg border border-outline-variant py-3 mb-3 min-h-11"
+            >
+              {pdfBusy ? (
+                <ActivityIndicator size="small" color={colors.gBlue} />
+              ) : (
+                <MaterialIcons name="picture-as-pdf" size={16} color={colors.gBlue} />
+              )}
+              <Text className="text-sm font-medium text-g-blue">{pdfBusy ? 'Reading PDF…' : 'Or upload a PDF'}</Text>
+            </TouchableOpacity>
+            {pdfError && <Text className="text-xs text-g-red mb-2">{pdfError}</Text>}
             <TextInput
               value={raw}
               onChangeText={setRaw}
@@ -126,6 +172,11 @@ export default function PasteSyllabusModal({ open, onClose, subjectName, onSave 
         {step === 'review' && (
           <>
             <ScrollView className="flex-1 px-5 pt-4" contentContainerStyle={{ paddingBottom: 24 }}>
+              {pdfPartial && (
+                <Text className="text-xs text-g-yellow-dark mb-3">
+                  Some parts of the PDF couldn't be read cleanly — double-check the topics below against the source.
+                </Text>
+              )}
               <Text className="text-sm text-on-surface-tertiary mb-4">
                 Review what got split out — edit, remove, or add topics in each unit, then save. {totalTopics} topic
                 {totalTopics === 1 ? '' : 's'} total.

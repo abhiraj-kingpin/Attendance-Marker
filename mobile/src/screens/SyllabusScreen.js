@@ -11,6 +11,7 @@ export default function SyllabusScreen() {
   const toggleTopic = useStore((s) => s.toggleTopic);
   const removeTopic = useStore((s) => s.removeTopic);
   const setSyllabusUnits = useStore((s) => s.setSyllabusUnits);
+  const updateSubject = useStore((s) => s.updateSubject);
 
   return (
     <View className="flex-1 bg-surface-variant">
@@ -34,6 +35,7 @@ export default function SyllabusScreen() {
                 onToggleTopic={(topicId) => toggleTopic(subject.id, topicId)}
                 onRemoveTopic={(topicId) => removeTopic(subject.id, topicId)}
                 onImportUnits={(units) => setSyllabusUnits(subject.id, units)}
+                onSetCommencementDate={(date) => updateSubject(subject.id, { commencementDate: date })}
               />
             ))}
           </View>
