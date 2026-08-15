@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma';
 import { signToken } from '../utils/jwt';
+import { AuthedRequest } from '../middleware/auth';
 
 const signupSchema = z.object({
   email: z.string().email(),
@@ -27,7 +28,7 @@ export async function signup(req: Request, res: Response) {
   const user = await prisma.user.create({ data: { email, passwordHash, name } });
 
   const token = signToken({ userId: user.id });
-  res.status(201).json({ token, user: { id: user.id, email: user.email, name: user.name } });
+  res.status(201).json({ token, user: { id: user.id, email: user.email, name: user.name, isAdmin: user.isAdmin } });
 }
 
 export async function login(req: Request, res: Response) {
@@ -44,5 +45,11 @@ export async function login(req: Request, res: Response) {
   await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
 
   const token = signToken({ userId: user.id });
-  res.json({ token, user: { id: user.id, email: user.email, name: user.name } });
+  res.json({ token, user: { id: user.id, email: user.email, name: user.name, isAdmin: user.isAdmin } });
+}
+
+export async function me(req: AuthedRequest, res: Response) {
+  const user = await prisma.user.findUnique({ where: { id: req.userId! } });
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  res.json({ id: user.id, email: user.email, name: user.name, isAdmin: user.isAdmin });
 }

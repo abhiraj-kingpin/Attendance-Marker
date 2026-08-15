@@ -129,16 +129,64 @@ were never actually seen. **Needs a real on-device test with real
 credentials** — the least-verified piece built this session.
 
 ## Phase F — Admin dashboard & polish
-- [ ] Web dashboard: active users, attendance stats, OCR/geo health, error logs
-- [ ] Geofence management UI, users list, settings panel
-- [ ] `GET /api/admin/analytics`, `/api/admin/attendance-log`, `/api/admin/geofences`
-- [ ] Onboarding tutorial animations (mobile)
-- [ ] Multi-device / spoofing sanity checks on attendance records
+**Backend** (`isAdmin`/`requireAdmin`, `adminController.ts`):
+- [x] `GET /api/admin/analytics` — total/active users, today's attendance
+  split, OCR accuracy, geo-tracking health, average attendance — all
+  computed from real data, no placeholders
+- [x] `GET /api/admin/attendance-log`, `/api/admin/geofences` (usage
+  count + last-used), `/api/admin/users` (with `?search=`)
+- [x] `GET /api/admin/ocr-stats` — added `OcrScanLog` (every scan attempt)
+  and `originalType` on `OcrCorrection` so `total_scans`/
+  `common_misclassifications` are real counts, not fabricated
+- [x] `GET`/`PUT /api/admin/settings` — mode toggle + feature flags,
+  stored via a singleton `AppSettings` row (see caveat in
+  `backend/README.md`: not yet enforced anywhere)
+- [x] `GET /api/admin/errors` — backed by a real `ErrorLog` table that
+  `errorHandler.ts` now writes to
+- [x] **Found and fixed a serious pre-existing bug while wiring error
+  logging**: Express 4 doesn't catch promise rejections from `async`
+  route handlers — confirmed directly (isolated repro) that an unhandled
+  error in *any* of the ~25 async controllers in this backend crashed the
+  entire process, not just the failing request. Fixed with
+  `express-async-errors`, required once at the top of `app.ts`. This
+  predates the admin dashboard work; it affected the whole backend.
+- [x] `make-admin` bootstrap script (no self-serve way to become the
+  first admin, by design) — live-tested end to end
+- [x] Live-tested via curl: 403 for non-admins, all endpoints against
+  real seeded data, settings GET/PUT, error logging verified via an
+  isolated repro of the async-error fix (before and after)
 
-**Deliberately not built:** a second, parallel React Native mobile app.
-`mobile/` already exists as the real, shipped v1.0.0 app — a second Expo
-project calling these same APIs would fork the product in two rather than
-extend it.
+**Frontend** (`admin-dashboard/` — separate Vite + React + TypeScript app):
+- [x] Login (shares backend auth; rejects non-admin accounts client-side
+  after checking `isAdmin` from `/api/auth/me`)
+- [x] Dashboard — metric cards, auto/manual pie chart, OCR accuracy bar
+  chart (Recharts), recent attendance table, 30s auto-refresh
+- [x] Users page — paginated table, search by email
+- [x] Geofences page — table (usage count, last used) + add-geofence form
+- [x] Settings page — mode toggle, feature flags, error log viewer
+- [x] `AuthContext`, `PrivateRoute` (redirects to `/login` if not an
+  authenticated admin), axios instance with JWT header +
+  401-clears-session interceptor
+- [x] TypeScript compiles clean, production build succeeds, dev server
+  verified to boot and serve correctly; full request/response contract
+  between frontend and backend live-tested via curl with the dashboard's
+  actual `Origin` header (CORS confirmed permissive enough)
+- [ ] **Not click-tested in an actual browser** — no browser automation
+  tool available here. Confidence is: types check, build succeeds, every
+  API call the UI makes was independently verified via curl against the
+  real backend with matching field names/shapes. The one thing that
+  genuinely needs a human: opening it and clicking through.
+- [ ] Map visualization on the Geofences page — marked optional in the
+  spec, not built (table + form only)
+- [ ] Onboarding tutorial animations (mobile) — not started
+
+Two deliberate deviations, both explained to you before starting:
+- **Vite instead of Create React App** — CRA is deprecated by the React
+  team; this repo's root web app already uses Vite, so it's consistent.
+- **A second, parallel React Native mobile app was not built.** `mobile/`
+  already exists as the real, shipped v1.0.0 app — a second Expo project
+  calling these same APIs would fork the product in two rather than
+  extend it.
 
 ## Already shipped before this checklist existed (v1.0.0, local-only)
 - [x] Timetable scan (basic, now upgraded by Phase B), manual attendance, configurable target %

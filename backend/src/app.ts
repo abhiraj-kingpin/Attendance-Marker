@@ -1,4 +1,12 @@
 import express from 'express';
+// Express 4 does not catch rejected promises from async route handlers —
+// an unhandled error in any of them crashes the whole process instead of
+// reaching errorHandler below (confirmed directly: a bare `throw` inside
+// an async handler took the entire server down, not just the one
+// request). This patches Express's router to forward those rejections to
+// the error middleware like Express 5 does natively. Must be required
+// before any routes are registered.
+import 'express-async-errors';
 import cors from 'cors';
 import { authRouter } from './routes/auth';
 import { subjectsRouter } from './routes/subjects';

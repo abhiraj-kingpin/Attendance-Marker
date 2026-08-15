@@ -81,9 +81,25 @@ zero external calls, zero billing.
 | GET | `/api/admin/ocr-stats` | Admin | Scan success rate + common misclassification patterns |
 | GET | `/api/admin/users` | Admin | All users with subject count, attendance %, last activity; `?search=` filters by email |
 
+| GET/PUT | `/api/admin/settings` | Admin | Default attendance mode + OCR/predictions/location-tracking feature flags (stored, not yet enforced — see caveat below) |
+| GET | `/api/admin/errors` | Admin | Last N logged server errors |
+| GET | `/api/auth/me` | ✓ | Current user's profile, including `isAdmin` |
+
 Admin routes need `isAdmin: true` on the user — there's no self-serve way
 to become the first admin. Run `npm run make-admin -- you@example.com`
 after signing up normally.
+
+**Settings caveat**: `AppSettings` is stored and exposed via the admin
+dashboard, but nothing in this backend or in `mobile/` currently reads it
+to actually change behavior. It's storage + an admin UI for now, not
+enforcement.
+
+**Important fix**: Express 4 does not catch promise rejections thrown
+inside `async` route handlers — confirmed directly that an unhandled
+error in one crashes the *entire process*, not just the failing request.
+`express-async-errors` (required at the top of `app.ts`, before any
+routes) patches this so errors reach `errorHandler` and get logged to
+`ErrorLog` instead of taking the server down.
 
 Geofence request/response bodies use `snake_case` (`subject_id`,
 `room_number`, `radius_meters`, ...) — the rest of the API is camelCase;

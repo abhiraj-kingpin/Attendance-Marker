@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { z } from 'zod';
 import { prisma } from '../lib/prisma';
 
 function todayISO(): string {
@@ -94,6 +95,46 @@ export async function getGeofences(_req: Request, res: Response) {
   );
 
   res.json(results);
+}
+
+export async function getSettings(_req: Request, res: Response) {
+  const settings = await prisma.appSettings.upsert({
+    where: { id: 'singleton' },
+    update: {},
+    create: { id: 'singleton' },
+  });
+  res.json(settings);
+}
+
+const updateSettingsSchema = z.object({
+  default_attendance_mode: z.enum(['manual', 'partial', 'automatic']).optional(),
+  ocr_enabled: z.boolean().optional(),
+  predictions_enabled: z.boolean().optional(),
+  location_tracking_enabled: z.boolean().optional(),
+});
+
+export async function updateSettings(req: Request, res: Response) {
+  const parsed = updateSettingsSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+  const d = parsed.data;
+
+  const settings = await prisma.appSettings.upsert({
+    where: { id: 'singleton' },
+    update: {
+      ...(d.default_attendance_mode !== undefined ? { defaultAttendanceMode: d.default_attendance_mode } : {}),
+      ...(d.ocr_enabled !== undefined ? { ocrEnabled: d.ocr_enabled } : {}),
+      ...(d.predictions_enabled !== undefined ? { predictionsEnabled: d.predictions_enabled } : {}),
+      ...(d.location_tracking_enabled !== undefined ? { locationTrackingEnabled: d.location_tracking_enabled } : {}),
+    },
+    create: { id: 'singleton' },
+  });
+  res.json(settings);
+}
+
+export async function getErrorLogs(req: Request, res: Response) {
+  const limit = Math.min(Number(req.query.limit) || 20, 100);
+  const logs = await prisma.errorLog.findMany({ take: limit, orderBy: { createdAt: 'desc' } });
+  res.json(logs);
 }
 
 export async function getOcrStats(_req: Request, res: Response) {

@@ -184,6 +184,29 @@ model OcrScanLog {
   @@index([userId])
 }
 
+// Single-row global config the admin dashboard can toggle. Honest caveat:
+// nothing in this backend or the mobile app currently reads these values
+// to change behavior — mobile/'s attendance mode is a per-user local
+// setting, and this backend's own auto-mark logic doesn't check a global
+// flag either. This stores the toggle and exposes it, no more; wiring
+// actual enforcement is a separate step.
+model AppSettings {
+  id                       String  @id @default("singleton")
+  defaultAttendanceMode    String  @default("manual") // manual | partial | automatic
+  ocrEnabled               Boolean @default(true)
+  predictionsEnabled       Boolean @default(true)
+  locationTrackingEnabled  Boolean @default(true)
+  updatedAt                DateTime @updatedAt
+}
+
+model ErrorLog {
+  id        String   @id @default(uuid())
+  message   String
+  stack     String?
+  path      String?
+  createdAt DateTime @default(now())
+}
+
 // Caches fetched CGPA data. Deliberately holds no GGSIPU credentials —
 // login happens in an in-app browser against the real portal; this only
 // stores what was read off the resulting page.
