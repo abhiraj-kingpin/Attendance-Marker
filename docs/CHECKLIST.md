@@ -79,6 +79,18 @@ that with PDF upload and the prediction engine rather than replacing it.
 - [x] Settings: Manual/Partial/Automatic mode toggle, geofence radius (defaults 150m, re-capturable)
 - [ ] **Foreground-only** — checks on app-open and every 5 minutes while the app stays open. True background tracking (checking while the app is closed) needs `expo-task-manager` + an Android foreground service, a materially larger and riskier native integration not yet attempted — flagging this honestly rather than claiming background coverage that isn't there.
 - [ ] Notification (system tray) on confirmation — currently an in-app `Alert`, not a push/local notification, so it only fires while the app is open (consistent with the foreground-only limitation above)
+- [x] Backend auto-mark endpoint (`POST /api/attendance/auto-mark`,
+  `attendanceService.ts`) — marks present for every subject whose geofence
+  you're in AND that has a `ClassSchedule` entry active right now AND
+  isn't already marked today. Added `ClassSchedule` (weekly class times per
+  subject — the backend had none before this) and `geofenceId`/location
+  fields on `Attendance`. Live-tested via curl: marks once, refuses to
+  double-mark on a second call the same day, stays empty when outside the
+  geofence, stays empty with no schedule at all, stays empty when a
+  schedule exists but its time window doesn't cover now. Not yet wired to
+  the mobile app — `mobile/`'s own `useAttendancePresence.js` does the
+  equivalent entirely client-side and doesn't call this backend at all
+  currently; the two are parallel implementations, not connected.
 
 ## Phase E — GGSIPU CGPA integration
 - [x] In-app WebView (`react-native-webview`) loading the real `https://examweb.ggsipu.ac.in/web/login.jsp` — login is GGSIPU's own rendered page, credentials never touch app or backend code

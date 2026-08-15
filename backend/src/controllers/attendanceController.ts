@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma';
 import { AuthedRequest } from '../middleware/auth';
+import { autoMarkAttendance } from '../services/attendanceService';
 
 const markSchema = z.object({
   subjectId: z.string(),
@@ -62,4 +63,24 @@ export async function attendanceStats(req: AuthedRequest, res: Response) {
   );
 
   res.json(stats);
+}
+
+const autoMarkSchema = z.object({
+  user_latitude: z.number(),
+  user_longitude: z.number(),
+  gps_accuracy_meters: z.number().optional(),
+});
+
+export async function autoMark(req: AuthedRequest, res: Response) {
+  const parsed = autoMarkSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+  const { user_latitude, user_longitude, gps_accuracy_meters } = parsed.data;
+
+  const marked = await autoMarkAttendance(req.userId!, user_latitude, user_longitude, gps_accuracy_meters ?? null);
+
+  res.json({
+    marked_subjects: marked,
+    timestamp: new Date().toISOString(),
+    location_accuracy: gps_accuracy_meters ?? null,
+  });
 }

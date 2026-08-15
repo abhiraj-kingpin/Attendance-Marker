@@ -41,26 +41,46 @@ model Subject {
   attendance     Attendance[]
   syllabusBlocks SyllabusBlock[]
   geofences      Geofence[]
+  schedules      ClassSchedule[]
 
   @@index([userId])
 }
 
 model Attendance {
-  id         String   @id @default(uuid())
+  id         String    @id @default(uuid())
   userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   subjectId  String
-  subject    Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  subject    Subject   @relation(fields: [subjectId], references: [id], onDelete: Cascade)
   date       String // YYYY-MM-DD
   status     String // present | absent | leave
-  method     String   @default("manual") // manual | automatic
+  method     String    @default("manual") // manual | automatic
+  geofenceId String?
+  geofence   Geofence? @relation(fields: [geofenceId], references: [id], onDelete: SetNull)
   latitude   Float?
   longitude  Float?
   accuracyM  Float?
   notes      String?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime  @default(now())
 
   @@index([userId, subjectId, date])
+}
+
+// A subject's weekly class times — needed to answer "is a class scheduled
+// right now", which auto-mark depends on. Mirrors the mobile app's local
+// per-period start/end time (mobile/src/lib/findCurrentPeriod.js) but
+// keyed by day-of-week rather than embedded in a per-day period list,
+// since the backend has no per-day timetable structure of its own.
+model ClassSchedule {
+  id        String   @id @default(uuid())
+  subjectId String
+  subject   Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  dayOfWeek String // Mon | Tue | Wed | Thu | Fri | Sat | Sun
+  startTime String // HH:MM, 24h
+  endTime   String // HH:MM, 24h
+  createdAt DateTime @default(now())
+
+  @@index([subjectId, dayOfWeek])
 }
 
 model SyllabusBlock {
@@ -93,6 +113,8 @@ model Geofence {
   radiusM    Float    @default(50)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+
+  attendance Attendance[]
 
   @@index([userId])
   @@index([subjectId])
