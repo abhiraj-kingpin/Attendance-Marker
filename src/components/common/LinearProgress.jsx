@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion';
 
-/** Material 3 linear determinate progress indicator — rounded track + rounded indicator bar. */
 export default function LinearProgress({ value, color = '#4285F4', height = 8, trackClassName = '' }) {
   const clamped = Math.max(0, Math.min(100, value || 0));
   return (

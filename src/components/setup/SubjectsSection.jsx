@@ -45,7 +45,7 @@ export default function SubjectsSection() {
   const removeSubject = useStore((s) => s.removeSubject);
 
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [editing, setEditing] = useState(null); // subject or null
+  const [editing, setEditing] = useState(null);
   const [name, setName] = useState('');
   const [type, setType] = useState('theory');
   const [credits, setCredits] = useState(4);

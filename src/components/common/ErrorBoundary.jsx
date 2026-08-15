@@ -2,12 +2,6 @@ import { Component } from 'react';
 import { ICONS } from '../../lib/icons';
 import Icon from './Icon';
 
-/**
- * Top-level render-error fallback. React error boundaries must be class
- * components — there is no hooks equivalent. Catches errors thrown during
- * render/lifecycle in the subtree below it and shows a recovery screen
- * instead of a blank white app, without touching any locally-stored data.
- */
 export default class ErrorBoundary extends Component {
   state = { hasError: false };
 

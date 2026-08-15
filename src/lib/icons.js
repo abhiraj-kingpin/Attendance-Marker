@@ -1,6 +1,3 @@
-// Central Material Symbols (outlined) icon map. Each entry is a raw SVG
-// string imported via Vite's `?raw` so only icons actually used ship in the
-// bundle. `-fill` variants are used for the active/selected nav state.
 import today from '@material-symbols/svg-400/outlined/today.svg?raw';
 import todayFill from '@material-symbols/svg-400/outlined/today-fill.svg?raw';
 import monitoring from '@material-symbols/svg-400/outlined/monitoring.svg?raw';

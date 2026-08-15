@@ -3,11 +3,6 @@ import { isDateExcluded } from './dates';
 export const DEFAULT_TARGET = 0.75;
 const EPS = 1e-9;
 
-/**
- * Compute held/attended/percentage for one subject from the flat attendance
- * record map, ignoring "No Class" marks and anything inside an excluded
- * date range. `target` is the attendance goal as a fraction (0.75 = 75%).
- */
 export function computeSubjectStats(subjectId, attendanceMap, excludedRanges, target = DEFAULT_TARGET) {
   let held = 0;
   let attended = 0;
@@ -33,14 +28,6 @@ export function computeSubjectStats(subjectId, attendanceMap, excludedRanges, ta
   };
 }
 
-/**
- * The "target % rule" live calculator, generalized for any target fraction
- * (not just 75%).
- * - If below target: how many classes in a row must be attended to climb
- *   back to >= target.
- * - If at/above target: how many classes can safely be missed in a row and
- *   stay >= target.
- */
 export function liveAdvice(held, attended, target = DEFAULT_TARGET) {
   if (held === 0) {
     return { status: 'none', canMiss: 0, mustAttend: 0 };
@@ -80,7 +67,6 @@ export function attendanceKey(date, periodId) {
   return `${date}__${periodId}`;
 }
 
-/** Per-day attendance rollup for calendar cells: 'present' | 'absent' | 'mixed' | 'excluded' | null (no data). */
 export function dayStatus(date, periods, attendanceMap, excludedRanges) {
   if (isDateExcluded(date, excludedRanges)) return 'excluded';
   if (!periods || periods.length === 0) return null;

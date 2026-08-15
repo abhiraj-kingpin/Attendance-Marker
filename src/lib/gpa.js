@@ -1,6 +1,25 @@
 export const GRADE_POINTS = { O: 10, 'A+': 9, A: 8, 'B+': 7, B: 6, C: 5, P: 4, F: 0 };
 export const GRADES = ['O', 'A+', 'A', 'B+', 'B', 'C', 'P', 'F'];
 
+const MARKS_TO_GRADE = [
+  { min: 90, grade: 'O' },
+  { min: 75, grade: 'A+' },
+  { min: 65, grade: 'A' },
+  { min: 55, grade: 'B+' },
+  { min: 50, grade: 'B' },
+  { min: 45, grade: 'C' },
+  { min: 40, grade: 'P' },
+];
+
+export function marksToGrade(totalMarks) {
+  const marks = Number(totalMarks);
+  if (!Number.isFinite(marks)) return null;
+  for (const { min, grade } of MARKS_TO_GRADE) {
+    if (marks >= min) return grade;
+  }
+  return 'F';
+}
+
 export function computeSGPA(subjects) {
   let creditSum = 0;
   let weightedSum = 0;

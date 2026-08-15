@@ -14,18 +14,11 @@ const initialState = {
   subjects: [],
   timetable: emptyTimetable(),
   attendance: {},
-  excludedRanges: [
-    {
-      id: 'seed-ncc-camp',
-      label: 'NCC / Camp',
-      start: '2026-10-01',
-      end: '2026-10-10',
-    },
-  ],
+  excludedRanges: [],
   syllabus: {},
   exams: [],
   gpa: {
-    admissionPeriod: null, // 'before2024' | '2024plus'
+    admissionPeriod: null,
     semesters: [],
   },
   settings: {
@@ -38,7 +31,6 @@ export const useStore = create(
     (set) => ({
       ...initialState,
 
-      // ---------- Subjects ----------
       addSubject(name, options = {}) {
         const trimmed = name.trim();
         if (!trimmed) return;
@@ -82,7 +74,6 @@ export const useStore = create(
         });
       },
 
-      // ---------- Timetable ----------
       addPeriod(day, subjectId) {
         if (!subjectId) return;
         set((s) => ({
@@ -111,7 +102,6 @@ export const useStore = create(
         });
       },
 
-      // ---------- Attendance ----------
       setAttendanceStatus(date, periodId, subjectId, status) {
         set((s) => {
           const key = attendanceKey(date, periodId);
@@ -126,7 +116,6 @@ export const useStore = create(
         });
       },
 
-      // ---------- Excluded ranges ----------
       addExcludedRange(range) {
         set((s) => ({
           excludedRanges: [...s.excludedRanges, { id: uid(), ...range }],
@@ -138,7 +127,6 @@ export const useStore = create(
         }));
       },
 
-      // ---------- Syllabus ----------
       addTopic(subjectId, title) {
         const trimmed = title.trim();
         if (!trimmed) return;
@@ -171,7 +159,6 @@ export const useStore = create(
         }));
       },
 
-      // ---------- Exams ----------
       addExam(exam) {
         set((s) => ({ exams: [...s.exams, { id: uid(), ...exam }] }));
       },
@@ -179,7 +166,6 @@ export const useStore = create(
         set((s) => ({ exams: s.exams.filter((e) => e.id !== id) }));
       },
 
-      // ---------- GPA ----------
       setAdmissionPeriod(period) {
         set((s) => ({ gpa: { ...s.gpa, admissionPeriod: period } }));
       },
@@ -251,7 +237,6 @@ export const useStore = create(
         }));
       },
 
-      // ---------- Settings ----------
       setAttendanceTarget(target) {
         const clamped = Math.min(100, Math.max(1, Math.round(Number(target) || 75)));
         set((s) => ({ settings: { ...s.settings, attendanceTarget: clamped } }));

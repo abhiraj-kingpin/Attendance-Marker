@@ -1,4 +1,3 @@
-/** Flat colored circular avatar — Google Tasks/Gmail style leading icon for list rows. */
 export default function Avatar({ color, size = 40, label, icon, className = '' }) {
   return (
     <span

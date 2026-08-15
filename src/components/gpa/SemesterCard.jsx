@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { GRADES } from '../../lib/gpa';
+import { GRADES, marksToGrade } from '../../lib/gpa';
 import { ICONS } from '../../lib/icons';
 import Card from '../common/Card';
 import ConfirmIconButton from '../common/ConfirmIconButton';
@@ -33,6 +33,17 @@ export default function SemesterCard({
   function saveName() {
     onRename(nameDraft.trim() || semester.name);
     setEditingName(false);
+  }
+
+  function updateMarks(sub, patch) {
+    const next = { ...patch };
+    const internal = 'internal' in patch ? patch.internal : sub.internal;
+    const external = 'external' in patch ? patch.external : sub.external;
+    if (internal !== '' && internal != null && external !== '' && external != null) {
+      const grade = marksToGrade((Number(internal) || 0) + (Number(external) || 0));
+      if (grade) next.grade = grade;
+    }
+    onUpdateSubject(sub.id, next);
   }
 
   return (
@@ -91,7 +102,7 @@ export default function SemesterCard({
                   type="number"
                   min="0"
                   value={sub.internal ?? ''}
-                  onChange={(e) => onUpdateSubject(sub.id, { internal: e.target.value })}
+                  onChange={(e) => updateMarks(sub, { internal: e.target.value })}
                   placeholder="—"
                   className="w-full bg-surface rounded-lg text-center font-medium text-sm text-on-surface outline-none py-2 border border-outline-variant placeholder:text-on-surface-tertiary"
                   aria-label="Internal marks"
@@ -103,7 +114,7 @@ export default function SemesterCard({
                   type="number"
                   min="0"
                   value={sub.external ?? ''}
-                  onChange={(e) => onUpdateSubject(sub.id, { external: e.target.value })}
+                  onChange={(e) => updateMarks(sub, { external: e.target.value })}
                   placeholder="—"
                   className="w-full bg-surface rounded-lg text-center font-medium text-sm text-on-surface outline-none py-2 border border-outline-variant placeholder:text-on-surface-tertiary"
                   aria-label="External marks"

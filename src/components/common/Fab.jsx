@@ -2,13 +2,6 @@ import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import Icon from './Icon';
 
-/**
- * Material 3 Floating Action Button — circular, elevated, bottom-right.
- * Portaled to document.body: Framer Motion's animated tab wrapper in App.jsx
- * sets a CSS transform, which turns it into a containing block for any
- * `position: fixed` descendant — without the portal the FAB would anchor to
- * that wrapper's (short) content box instead of the real viewport.
- */
 export default function Fab({ icon, label, onClick, className = '' }) {
   return createPortal(
     <div className="gpu-layer fixed inset-0 z-30 pointer-events-none">

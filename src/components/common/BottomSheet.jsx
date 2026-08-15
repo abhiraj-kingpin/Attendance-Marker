@@ -3,12 +3,6 @@ import { AnimatePresence, motion } from 'framer-motion';
 import Icon from './Icon';
 import { ICONS } from '../../lib/icons';
 
-/**
- * Portaled to document.body for the same reason as Fab: the per-tab
- * animated wrapper in App.jsx has a CSS transform, which would otherwise
- * make `fixed` here anchor to that wrapper's content box instead of the
- * real viewport.
- */
 export default function BottomSheet({ open, onClose, title, children }) {
   return createPortal(
     <AnimatePresence>
