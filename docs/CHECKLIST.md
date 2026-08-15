@@ -29,6 +29,8 @@ why.
 - [x] Unit tests (17 constructed cases, all passing)
 - [ ] **Tuned against a real timetable photo** — still needed; heuristics only verified against constructed examples so far
 - [ ] Subject code pattern validation (beyond the current all-caps heuristic)
+- [x] Subject customization — custom tags (comma-separated, shown as pills) and a free-text notes field, added to the manual Add/Edit subject sheet
+- [ ] Auto-fetch subject metadata from a college database — no such API exists to query
 
 ## Phase C — Syllabus PDF extraction + class predictions
 - [x] PDF file picker (`expo-document-picker`) + text extraction
@@ -71,11 +73,23 @@ that with PDF upload and the prediction engine rather than replacing it.
 - [ ] Notification (system tray) on confirmation — currently an in-app `Alert`, not a push/local notification, so it only fires while the app is open (consistent with the foreground-only limitation above)
 
 ## Phase E — GGSIPU CGPA integration
-- [ ] In-app WebView login against the real `examweb.ggsipu.ac.in` (no credentials touch app/backend code — see deviation)
-- [ ] Read rendered marks page after login
-- [ ] Cache CGPA/semester data locally (`CgpaSession`, already in Phase A schema — holds no credentials)
-- [ ] CGPA dashboard: current CGPA, semester trend, subject marks
+- [x] In-app WebView (`react-native-webview`) loading the real `https://examweb.ggsipu.ac.in/web/login.jsp` — login is GGSIPU's own rendered page, credentials never touch app or backend code
+- [x] Generic table/CGPA-pattern extraction from the currently displayed page, shown as a raw review screen
+- [x] Snapshot cached locally (`cgpaSnapshot` in the store — holds no credentials, just what was visible at extraction time)
+- [ ] Structured CGPA dashboard (trend chart, subject-by-subject) — not built; the existing manual GPA screen already covers this, snapshot is a cross-check aid, not a replacement
 - [ ] Export to PDF
+
+**Honesty note:** `examweb.ggsipu.ac.in` refuses connections from outside
+India (confirmed — every fetch attempt while building this got
+`ECONNREFUSED`), so the real page's exact HTML structure could not be
+inspected or tested against while building this. The extraction script is
+deliberately generic (grab every `<table>`, regex-search for "CGPA"/"SGPA"
+followed by a number) rather than targeting specific field IDs that were
+never actually seen — it surfaces raw content for you to read and
+cross-check, not a claim of precise auto-parsed fields. **Needs a real
+on-device test with real GGSIPU credentials to confirm the extraction
+finds anything useful at all** — this is the least-verified piece built so
+far this session.
 
 ## Phase F — Admin dashboard & polish
 - [ ] Web dashboard: active users, attendance stats, error logs

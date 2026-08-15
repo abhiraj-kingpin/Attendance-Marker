@@ -27,6 +27,15 @@ function SubjectRow({ subject, onEdit, onRemove, colors }) {
           {subject.teacher ? ` · ${subject.teacher}` : ''}
           {subject.room ? ` · Room ${subject.room}` : ''}
         </Text>
+        {subject.tags?.length > 0 && (
+          <View className="flex-row flex-wrap gap-1 mt-1">
+            {subject.tags.map((tag) => (
+              <View key={tag} className="rounded-full px-2 py-0.5 bg-surface-variant-2">
+                <Text className="text-2xs font-medium text-on-surface-tertiary">#{tag}</Text>
+              </View>
+            ))}
+          </View>
+        )}
       </View>
       <TouchableOpacity onPress={onEdit} className="w-11 h-11 items-center justify-center rounded-full">
         <MaterialIcons name="edit" size={18} color={colors.onSurfaceTertiary} />
@@ -50,6 +59,8 @@ const SubjectsSection = forwardRef(function SubjectsSection(_props, ref) {
   const [credits, setCredits] = useState('4');
   const [teacher, setTeacher] = useState('');
   const [room, setRoom] = useState('');
+  const [notes, setNotes] = useState('');
+  const [tagsText, setTagsText] = useState('');
 
   function openAdd() {
     setEditing(null);
@@ -58,6 +69,8 @@ const SubjectsSection = forwardRef(function SubjectsSection(_props, ref) {
     setCredits('4');
     setTeacher('');
     setRoom('');
+    setNotes('');
+    setTagsText('');
     setSheetOpen(true);
   }
 
@@ -70,16 +83,31 @@ const SubjectsSection = forwardRef(function SubjectsSection(_props, ref) {
     setCredits(String(subject.credits ?? 4));
     setTeacher(subject.teacher ?? '');
     setRoom(subject.room ?? '');
+    setNotes(subject.notes ?? '');
+    setTagsText((subject.tags ?? []).join(', '));
     setSheetOpen(true);
+  }
+
+  function parseTags() {
+    return tagsText.split(',').map((t) => t.trim()).filter(Boolean);
   }
 
   function handleSave() {
     const trimmed = name.trim();
     if (!trimmed) return;
+    const tags = parseTags();
     if (editing) {
-      updateSubject(editing.id, { name: trimmed, type, credits: Number(credits) || 4, teacher: teacher.trim() || null, room: room.trim() || null });
+      updateSubject(editing.id, {
+        name: trimmed,
+        type,
+        credits: Number(credits) || 4,
+        teacher: teacher.trim() || null,
+        room: room.trim() || null,
+        notes: notes.trim() || null,
+        tags,
+      });
     } else {
-      addSubject(trimmed, { type, credits, teacher, room });
+      addSubject(trimmed, { type, credits, teacher, room, notes, tags });
     }
     setSheetOpen(false);
   }
@@ -179,6 +207,23 @@ const SubjectsSection = forwardRef(function SubjectsSection(_props, ref) {
             />
           </View>
         </View>
+
+        <Text className="text-sm font-medium text-on-surface-secondary mb-1.5 mt-3">Tags (comma-separated)</Text>
+        <TextInput
+          value={tagsText}
+          onChangeText={setTagsText}
+          placeholder="difficult, lab, assignment-pending"
+          className="mb-3 rounded-lg border border-outline-variant px-4 py-3 font-medium text-on-surface"
+        />
+
+        <Text className="text-sm font-medium text-on-surface-secondary mb-1.5">Notes (optional)</Text>
+        <TextInput
+          value={notes}
+          onChangeText={setNotes}
+          placeholder="Anything worth remembering about this subject"
+          multiline
+          className="rounded-lg border border-outline-variant px-4 py-3 font-medium text-on-surface"
+        />
 
         <TouchableOpacity
           onPress={handleSave}

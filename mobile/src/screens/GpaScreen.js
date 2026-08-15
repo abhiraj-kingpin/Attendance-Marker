@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useStore } from '../store/useStore';
 import { computeCGPA, cgpaToPercentage, gpaToGrade } from '../lib/gpa';
 import { useTheme } from '../lib/useTheme';
@@ -7,6 +9,7 @@ import Card from '../components/Card';
 import EmptyState from '../components/EmptyState';
 import Fab from '../components/Fab';
 import SemesterCard from '../components/SemesterCard';
+import CgpaPortalModal from '../components/CgpaPortalModal';
 
 const gradeColor = {
   O: { on: '#1E7E34', container: '#E6F4EA' },
@@ -29,6 +32,9 @@ export default function GpaScreen() {
   const addSemesterSubject = useStore((s) => s.addSemesterSubject);
   const updateSemesterSubject = useStore((s) => s.updateSemesterSubject);
   const removeSemesterSubject = useStore((s) => s.removeSemesterSubject);
+  const cgpaSnapshot = useStore((s) => s.cgpaSnapshot);
+  const setCgpaSnapshot = useStore((s) => s.setCgpaSnapshot);
+  const [portalOpen, setPortalOpen] = useState(false);
 
   const { cgpa, perSemester } = computeCGPA(gpa.semesters);
   const sgpaBySemId = Object.fromEntries(perSemester.map((p) => [p.id, p]));
@@ -58,6 +64,21 @@ export default function GpaScreen() {
             {percentage === null ? 'Set your admission year to see %' : `≈ ${percentage.toFixed(2)}% equivalent`}
           </Text>
         </Card>
+
+        <TouchableOpacity
+          onPress={() => setPortalOpen(true)}
+          className="flex-row items-center justify-center gap-2 rounded-lg border border-outline-variant py-3 mb-4"
+        >
+          <MaterialIcons name="sync" size={16} color={colors.gBlue} />
+          <Text className="text-sm font-medium text-g-blue">
+            {cgpaSnapshot ? 'Re-check against GGSIPU portal' : 'Cross-check with GGSIPU portal'}
+          </Text>
+        </TouchableOpacity>
+        {cgpaSnapshot && (
+          <Text className="text-2xs text-on-surface-tertiary -mt-3 mb-4">
+            Last checked {new Date(cgpaSnapshot.fetchedAt).toLocaleString()}
+          </Text>
+        )}
 
         <Card className="p-4 mb-4">
           <Text className="text-sm font-medium text-on-surface-secondary mb-2">When were you admitted?</Text>
@@ -108,6 +129,8 @@ export default function GpaScreen() {
       </ScrollView>
 
       <Fab icon="add" label="Add semester" onPress={() => addSemester()} />
+
+      <CgpaPortalModal open={portalOpen} onClose={() => setPortalOpen(false)} onSave={setCgpaSnapshot} />
     </View>
   );
 }

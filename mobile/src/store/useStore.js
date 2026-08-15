@@ -50,6 +50,10 @@ export const initialState = {
     admissionPeriod: null,
     semesters: [],
   },
+  // Raw best-effort snapshot from the GGSIPU portal WebView (see
+  // CgpaPortalModal.js) — holds no credentials, just what was visible on
+  // the results page at extraction time, for the user to cross-check.
+  cgpaSnapshot: null,
   settings: {
     attendanceTarget: 75,
     themeMode: 'light',
@@ -87,6 +91,8 @@ export const useStore = create(
               credits: Number(options.credits) || 4,
               teacher: options.teacher?.trim() || null,
               room: options.room?.trim() || null,
+              notes: options.notes?.trim() || null,
+              tags: Array.isArray(options.tags) ? options.tags.filter(Boolean) : [],
             },
           ],
         }));
@@ -346,6 +352,9 @@ export const useStore = create(
       },
       setCollegeLocation(collegeLocation) {
         set((s) => ({ settings: { ...s.settings, collegeLocation } }));
+      },
+      setCgpaSnapshot(snapshot) {
+        set(() => ({ cgpaSnapshot: snapshot ? { ...snapshot, fetchedAt: new Date().toISOString() } : null }));
       },
     }),
     {
