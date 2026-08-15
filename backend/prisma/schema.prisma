@@ -97,7 +97,21 @@ model SyllabusBlock {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
+  studySchedule StudySchedule[]
+
   @@index([subjectId])
+}
+
+model StudySchedule {
+  id                    String    @id @default(uuid())
+  blockId               String
+  block                 SyllabusBlock @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  plannedCompletionDate String? // YYYY-MM-DD
+  actualCompletionDate  String?
+  status                String    @default("not_started") // not_started | in_progress | completed
+  createdAt             DateTime  @default(now())
+
+  @@index([blockId])
 }
 
 model Geofence {

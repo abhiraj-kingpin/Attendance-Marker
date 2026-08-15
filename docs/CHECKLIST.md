@@ -57,9 +57,19 @@ end of this file).
 - [ ] **Not yet confirmed on a real device** — `pako` in Hermes and the document picker's native behavior are the unverified pieces
 - [ ] OCR fallback for scanned/handwritten PDFs — out of scope; not practical on-device at any real page count
 
-**Backend** — not started (`syllabusService.ts`, `predictionService.ts`,
-`study_schedule`/`syllabus_blocks` tables, `/api/syllabus/*`,
-`/api/predictions/*`). Next up.
+**Backend** (`syllabusService.ts`):
+- [x] `extractTextFromPDF` — same byte-level approach as the mobile
+  extractor, using Node's built-in `zlib` instead of `pako` (available
+  natively server-side)
+- [x] `detectSyllabusContent` — keyword search (Syllabus/Course Content/
+  Unit/Chapter/Module/Topics), slices from the first match onward
+- [x] `parseIntoBlocks` — same Unit/Chapter/Module header logic as the
+  mobile parser, ported
+- [x] `POST /api/syllabus/upload` (multipart `pdf_file`), `POST
+  /api/syllabus/confirm-blocks`, `GET /api/syllabus/:subjectId`
+- [x] `StudySchedule` table, one row auto-created per confirmed block
+- [x] Live-tested end-to-end via curl with a real generated PDF (FlateDecode-compressed, deflated via Node's zlib) through a real multipart HTTP upload — correctly extracted and block-split Unit 1 / Chapter 2 / Module 3, confirmed, and queried back with schedule status attached
+- [ ] Predictions (`predictionService.ts`, `/api/predictions/*`) — next up
 
 ## Phase D — Location, geofencing & auto-attendance
 **Mobile** (`geofence.js`, `findCurrentPeriod.js`, `useAttendancePresence.js`):

@@ -70,6 +70,9 @@ zero external calls, zero billing.
 | POST | `/api/attendance/auto-mark` | ✓ | Given `user_latitude`+`user_longitude`, marks present for every subject whose geofence you're in AND that has a class scheduled right now AND isn't already marked today |
 | POST | `/api/ocr/scan-timetable` | ✓ | Multipart `image_file` → OCR (Tesseract) + subject/teacher/room/break classification with confidence scores |
 | POST | `/api/ocr/confirm-timetable` | ✓ | Save reviewed subjects, and any corrections (checked before the classifier next time) |
+| POST | `/api/syllabus/upload` | ✓ | Multipart `pdf_file` + `subject_id` → extracted text, keyword-detected syllabus section, Unit/Chapter/Module blocks |
+| POST | `/api/syllabus/confirm-blocks` | ✓ | Save reviewed blocks; auto-creates a `StudySchedule` row per block |
+| GET | `/api/syllabus/:subjectId` | ✓ | List a subject's saved blocks with their study schedule status |
 
 Geofence request/response bodies use `snake_case` (`subject_id`,
 `room_number`, `radius_meters`, ...) — the rest of the API is camelCase;

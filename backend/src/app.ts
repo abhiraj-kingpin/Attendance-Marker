@@ -6,6 +6,7 @@ import { attendanceRouter } from './routes/attendance';
 import { geofencesRouter, locationRouter } from './routes/geofences';
 import { scheduleRouter } from './routes/schedule';
 import { ocrRouter } from './routes/ocr';
+import { syllabusRouter } from './routes/syllabus';
 import { errorHandler } from './middleware/errorHandler';
 
 export const app = express();
@@ -22,5 +23,6 @@ app.use('/api/geofences', geofencesRouter);
 app.use('/api/location', locationRouter);
 app.use('/api/schedule', scheduleRouter);
 app.use('/api/ocr', ocrRouter);
+app.use('/api/syllabus', syllabusRouter);
 
 app.use(errorHandler);
