@@ -10,18 +10,21 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
+  id           String    @id @default(uuid())
+  email        String    @unique
   passwordHash String
   name         String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  isAdmin      Boolean   @default(false)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  subjects    Subject[]
-  attendance  Attendance[]
-  geofences            Geofence[]
-  cgpaSession          CgpaSession?
-  ocrCorrections       OcrCorrection[]
+  subjects              Subject[]
+  attendance            Attendance[]
+  geofences             Geofence[]
+  cgpaSession           CgpaSession?
+  ocrCorrections        OcrCorrection[]
+  ocrScanLogs           OcrScanLog[]
   predictionCorrections PredictionCorrection[]
 }
 
@@ -162,8 +165,21 @@ model OcrCorrection {
   userId        String
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   originalText  String
+  originalType  String? // what classifyText() guessed, if the caller reports it
   correctedType String // subject | teacher | break | room | time
   createdAt     DateTime @default(now())
+
+  @@index([userId])
+}
+
+// One row per scan-timetable call, so admin OCR stats reflect real usage
+// instead of being derived/guessed from corrections alone.
+model OcrScanLog {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  success   Boolean
+  createdAt DateTime @default(now())
 
   @@index([userId])
 }

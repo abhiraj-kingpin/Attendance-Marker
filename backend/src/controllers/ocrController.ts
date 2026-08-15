@@ -11,10 +11,12 @@ export async function scanTimetable(req: AuthedRequest & { file?: Express.Multer
   try {
     rawText = await extractTimetableFromImage(req.file.buffer);
   } catch {
+    await prisma.ocrScanLog.create({ data: { userId: req.userId!, success: false } });
     return res.status(422).json({ error: 'Could not read text from that image — try a clearer, well-lit photo.' });
   }
 
   const { classified, requiresConfirmation } = classifyText(rawText);
+  await prisma.ocrScanLog.create({ data: { userId: req.userId!, success: true } });
 
   res.json({
     raw_extracted: rawText,
@@ -25,6 +27,7 @@ export async function scanTimetable(req: AuthedRequest & { file?: Express.Multer
 
 const correctionSchema = z.object({
   original_text: z.string(),
+  original_type: z.enum(['subject', 'teacher', 'break', 'room', 'time']).optional(),
   corrected_type: z.enum(['subject', 'teacher', 'break', 'room', 'time']),
 });
 
@@ -43,6 +46,7 @@ export async function confirmTimetable(req: AuthedRequest, res: Response) {
       data: user_corrections.map((c) => ({
         userId: req.userId!,
         originalText: c.original_text,
+        originalType: c.original_type ?? null,
         correctedType: c.corrected_type,
       })),
     });

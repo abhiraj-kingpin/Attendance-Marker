@@ -41,6 +41,8 @@ export async function login(req: Request, res: Response) {
   const valid = await bcrypt.compare(password, user.passwordHash);
   if (!valid) return res.status(401).json({ error: 'Invalid email or password' });
 
+  await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
+
   const token = signToken({ userId: user.id });
   res.json({ token, user: { id: user.id, email: user.email, name: user.name } });
 }

@@ -8,6 +8,7 @@ import { scheduleRouter } from './routes/schedule';
 import { ocrRouter } from './routes/ocr';
 import { syllabusRouter } from './routes/syllabus';
 import { predictionsRouter } from './routes/predictions';
+import { adminRouter } from './routes/admin';
 import { errorHandler } from './middleware/errorHandler';
 
 export const app = express();
@@ -26,5 +27,6 @@ app.use('/api/schedule', scheduleRouter);
 app.use('/api/ocr', ocrRouter);
 app.use('/api/syllabus', syllabusRouter);
 app.use('/api/predictions', predictionsRouter);
+app.use('/api/admin', adminRouter);
 
 app.use(errorHandler);

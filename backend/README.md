@@ -75,6 +75,15 @@ zero external calls, zero billing.
 | GET | `/api/syllabus/:subjectId` | ✓ | List a subject's saved blocks with their study schedule status |
 | POST | `/api/predictions/check/:subjectId` | ✓ | Expected syllabus block right now, given the subject's `commencementDate`/`semesterWeeks` |
 | POST | `/api/predictions/correct/:subjectId` | ✓ | Report the actual block; feeds into `accuracy_percent` on future checks |
+| GET | `/api/admin/analytics` | Admin | Total/active users, today's attendance split, OCR/geo-tracking health, average attendance % |
+| GET | `/api/admin/attendance-log` | Admin | Recent attendance records with user/subject/room joined in |
+| GET | `/api/admin/geofences` | Admin | All geofences with usage count and last-used timestamp |
+| GET | `/api/admin/ocr-stats` | Admin | Scan success rate + common misclassification patterns |
+| GET | `/api/admin/users` | Admin | All users with subject count, attendance %, last activity; `?search=` filters by email |
+
+Admin routes need `isAdmin: true` on the user — there's no self-serve way
+to become the first admin. Run `npm run make-admin -- you@example.com`
+after signing up normally.
 
 Geofence request/response bodies use `snake_case` (`subject_id`,
 `room_number`, `radius_meters`, ...) — the rest of the API is camelCase;
