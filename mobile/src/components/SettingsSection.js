@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, Linking, Alert, Switch } from 'react-native';
+import { View, Text, TouchableOpacity, Linking, Alert, Switch, ActivityIndicator } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import * as Location from 'expo-location';
 import { useStore, initialState } from '../store/useStore';
 import { useTheme } from '../lib/useTheme';
 import { FONT_SCALES, FONT_FAMILIES, ACCENT_HUE_PRESETS, hslToHex } from '../lib/theme';
@@ -15,6 +16,12 @@ const THEME_OPTIONS = [
 ];
 const FONT_SCALE_OPTIONS = Object.entries(FONT_SCALES).map(([value, v]) => ({ value, label: v.label }));
 const FONT_FAMILY_OPTIONS = Object.entries(FONT_FAMILIES).map(([value, v]) => ({ value, label: v.label }));
+const ATTENDANCE_MODE_OPTIONS = [
+  { value: 'manual', label: 'Manual' },
+  { value: 'partial', label: 'Partial' },
+  { value: 'automatic', label: 'Automatic' },
+];
+const DEFAULT_GEOFENCE_RADIUS_M = 150;
 
 const SUPPORT_EMAIL = 'attendencemarker.help@gmail.com';
 const ABOUT_MESSAGE =
@@ -152,7 +159,11 @@ export default function SettingsSection() {
   const setAccentHue = useStore((s) => s.setAccentHue);
   const setBackgroundHue = useStore((s) => s.setBackgroundHue);
   const setRemindersEnabled = useStore((s) => s.setRemindersEnabled);
+  const setAttendanceMode = useStore((s) => s.setAttendanceMode);
+  const setCollegeLocation = useStore((s) => s.setCollegeLocation);
   const { colors } = useTheme();
+
+  const [locating, setLocating] = useState(false);
 
   const themeMode = settings.themeMode === 'dark' ? 'dark' : 'light';
   const fontScale = settings.fontScale ?? 'default';
@@ -160,6 +171,29 @@ export default function SettingsSection() {
   const accentHue = settings.accentHue ?? 217;
   const backgroundHue = settings.backgroundHue ?? null;
   const remindersEnabled = settings.remindersEnabled ?? false;
+  const attendanceMode = settings.attendanceMode ?? 'manual';
+  const collegeLocation = settings.collegeLocation ?? null;
+
+  async function captureCollegeLocation() {
+    setLocating(true);
+    try {
+      const perm = await Location.requestForegroundPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert('Location permission needed', 'Attendance Marker needs location access to know when you\'re at college.');
+        return;
+      }
+      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      setCollegeLocation({
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+        radiusM: collegeLocation?.radiusM ?? DEFAULT_GEOFENCE_RADIUS_M,
+      });
+    } catch {
+      Alert.alert('Could not get your location', 'Make sure location services are on and try again.');
+    } finally {
+      setLocating(false);
+    }
+  }
 
   async function toggleReminders(value) {
     if (value) {
@@ -241,6 +275,38 @@ export default function SettingsSection() {
             thumbColor="#FFFFFF"
           />
         </View>
+      </SettingsCard>
+
+      <SettingsCard
+        icon="location-on"
+        title="Attendance mode"
+        hint="Automatic/Partial prompt you to confirm attendance when you're near college during a scheduled class — they never mark it for you silently."
+      >
+        <PillGroup options={ATTENDANCE_MODE_OPTIONS} value={attendanceMode} onChange={setAttendanceMode} />
+
+        {attendanceMode !== 'manual' && (
+          <View className="mt-3.5">
+            <Text className="text-xs font-medium text-on-surface-secondary mb-1.5">College location</Text>
+            {collegeLocation ? (
+              <View className="flex-row items-center gap-2 mb-2">
+                <MaterialIcons name="check-circle" size={16} color={colors.gGreenDark} />
+                <Text className="text-xs text-on-surface-tertiary flex-1">
+                  Set — within {collegeLocation.radiusM}m of {collegeLocation.latitude.toFixed(4)}, {collegeLocation.longitude.toFixed(4)} counts as "at college". Also add class times in Setup → Timetable so prompts know when to fire.
+                </Text>
+              </View>
+            ) : (
+              <Text className="text-xs text-g-red mb-2">Not set yet — stand at your college and tap below.</Text>
+            )}
+            <TouchableOpacity
+              onPress={captureCollegeLocation}
+              disabled={locating}
+              className="flex-row items-center justify-center gap-2 rounded-lg border border-outline-variant py-3 min-h-11"
+            >
+              {locating ? <ActivityIndicator size="small" color={colors.gBlue} /> : <MaterialIcons name="my-location" size={16} color={colors.gBlue} />}
+              <Text className="text-sm font-medium text-g-blue">{collegeLocation ? 'Update to my current location' : 'Use my current location'}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </SettingsCard>
 
       <SettingsCard icon="help" title="Help & feedback">

@@ -62,12 +62,13 @@ paste-text-and-split-into-units (`PasteSyllabusModal.js`,
 that with PDF upload and the prediction engine rather than replacing it.
 
 ## Phase D — Location & building-level attendance prompts
-- [ ] Onboarding: set college coordinates (needs a Maps/Geocoding API key from you)
-- [ ] Building-level geofence
-- [ ] Background presence check during class hours
-- [ ] Confirmation prompt when near campus during a scheduled class (not silent auto-mark — see deviation)
-- [ ] Notification on confirmation ("Mark attendance for [Subject]?")
-- [ ] Settings: geofence radius, tracking on/off, notification preferences
+- [x] College location capture — via device GPS ("stand here, tap Capture"), **not** a typed name + Google Geocoding API, so the Maps API key is no longer a blocker for this feature. The key would only add a "type your college's name" convenience on top later.
+- [x] Building-level geofence (Haversine distance, unit-tested against known reference distances)
+- [x] Per-period class times (start/end) — timetable periods had no time data at all before this; added an optional time editor per period, since presence checking needs to know when a class is happening
+- [x] Confirmation prompt when near campus during a scheduled class (`Alert.alert`, not silent auto-mark — see deviation)
+- [x] Settings: Manual/Partial/Automatic mode toggle, geofence radius (defaults 150m, re-capturable)
+- [ ] **Foreground-only** — checks on app-open and every 5 minutes while the app stays open. True background tracking (checking while the app is closed) needs `expo-task-manager` + an Android foreground service, a materially larger and riskier native integration not yet attempted — flagging this honestly rather than claiming background coverage that isn't there.
+- [ ] Notification (system tray) on confirmation — currently an in-app `Alert`, not a push/local notification, so it only fires while the app is open (consistent with the foreground-only limitation above)
 
 ## Phase E — GGSIPU CGPA integration
 - [ ] In-app WebView login against the real `examweb.ggsipu.ac.in` (no credentials touch app/backend code — see deviation)

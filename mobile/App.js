@@ -9,12 +9,14 @@ import RootNavigator from './src/navigation/RootNavigator';
 import IntroScreen from './src/screens/IntroScreen';
 import { useThemeVars, useColorSchemeSetting } from './src/lib/useTheme';
 import { useReminderSync } from './src/lib/useReminderSync';
+import { useAttendancePresence } from './src/lib/useAttendancePresence';
 
 export default function App() {
   const [showIntro, setShowIntro] = useState(true);
   const themeVars = useThemeVars();
   const scheme = useColorSchemeSetting();
   useReminderSync();
+  useAttendancePresence();
 
   return (
     // vars()'s actual payload lives in a side-table keyed by object identity,

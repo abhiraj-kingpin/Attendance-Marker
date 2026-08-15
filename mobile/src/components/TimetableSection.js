@@ -1,5 +1,5 @@
 import { useState, useImperativeHandle, forwardRef } from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, TextInput } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useStore } from '../store/useStore';
 import { colorForSubject } from '../lib/colors';
@@ -20,9 +20,12 @@ const TimetableSection = forwardRef(function TimetableSection(_props, ref) {
   const removePeriod = useStore((s) => s.removePeriod);
   const movePeriod = useStore((s) => s.movePeriod);
 
+  const updatePeriod = useStore((s) => s.updatePeriod);
+
   const [day, setDay] = useState(DAYS[0]);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
+  const [timeEditor, setTimeEditor] = useState(null); // { periodId, start, end }
 
   useImperativeHandle(ref, () => ({
     openAdd: () => subjects.length > 0 && setSheetOpen(true),
@@ -73,7 +76,18 @@ const TimetableSection = forwardRef(function TimetableSection(_props, ref) {
             return (
               <Card key={period.id} className="flex-row items-center gap-3 p-3.5">
                 <Avatar color={color} size={36} label={String(idx + 1)} />
-                <Text className="flex-1 font-medium text-on-surface">{subject ? subject.name : 'Unknown subject'}</Text>
+                <View className="flex-1 min-w-0">
+                  <Text className="font-medium text-on-surface">{subject ? subject.name : 'Unknown subject'}</Text>
+                  <TouchableOpacity
+                    onPress={() => setTimeEditor({ periodId: period.id, start: period.startTime || '', end: period.endTime || '' })}
+                    className="flex-row items-center gap-1 mt-0.5"
+                  >
+                    <MaterialIcons name="schedule" size={12} color={colors.onSurfaceTertiary} />
+                    <Text className="text-xs text-on-surface-tertiary">
+                      {period.startTime && period.endTime ? `${period.startTime}–${period.endTime}` : 'Set time'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
                 <View>
                   <TouchableOpacity disabled={idx === 0} onPress={() => movePeriod(day, period.id, -1)} className="p-2" style={{ opacity: idx === 0 ? 0.2 : 1 }}>
                     <MaterialIcons name="keyboard-arrow-up" size={18} color={colors.onSurfaceTertiary} />
@@ -117,6 +131,41 @@ const TimetableSection = forwardRef(function TimetableSection(_props, ref) {
       </BottomSheet>
 
       <ScanTimetableModal open={scanOpen} onClose={() => setScanOpen(false)} />
+
+      <BottomSheet open={!!timeEditor} onClose={() => setTimeEditor(null)} title="Set class time">
+        <Text className="text-xs text-on-surface-tertiary mb-3">
+          Used to prompt attendance when you're near college during this class — optional.
+        </Text>
+        <View className="flex-row gap-3 mb-4">
+          <View className="flex-1">
+            <Text className="text-sm font-medium text-on-surface-secondary mb-1.5">Start (HH:MM)</Text>
+            <TextInput
+              value={timeEditor?.start ?? ''}
+              onChangeText={(v) => setTimeEditor((t) => ({ ...t, start: v }))}
+              placeholder="09:00"
+              className="rounded-lg border border-outline-variant px-3 py-3 font-medium text-on-surface"
+            />
+          </View>
+          <View className="flex-1">
+            <Text className="text-sm font-medium text-on-surface-secondary mb-1.5">End (HH:MM)</Text>
+            <TextInput
+              value={timeEditor?.end ?? ''}
+              onChangeText={(v) => setTimeEditor((t) => ({ ...t, end: v }))}
+              placeholder="10:00"
+              className="rounded-lg border border-outline-variant px-3 py-3 font-medium text-on-surface"
+            />
+          </View>
+        </View>
+        <TouchableOpacity
+          onPress={() => {
+            updatePeriod(day, timeEditor.periodId, { startTime: timeEditor.start.trim() || null, endTime: timeEditor.end.trim() || null });
+            setTimeEditor(null);
+          }}
+          className="bg-g-blue rounded-full py-3.5 items-center"
+        >
+          <Text className="text-white font-medium">Save</Text>
+        </TouchableOpacity>
+      </BottomSheet>
     </View>
   );
 });

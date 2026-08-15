@@ -58,6 +58,13 @@ export const initialState = {
     accentHue: 217,
     backgroundHue: null,
     remindersEnabled: false,
+    // 'manual' (default): user marks attendance themselves.
+    // 'partial'/'automatic': prompts to confirm attendance when the phone's
+    // location is near the college during a scheduled class — see
+    // useAttendancePresence.js. Never marks silently; see docs/ROADMAP-PLUS.md
+    // for why (phone GPS can't reliably tell rooms/floors apart).
+    attendanceMode: 'manual',
+    collegeLocation: null, // { latitude, longitude, radiusM }
   },
 };
 
@@ -145,6 +152,14 @@ export const useStore = create(
       },
       setTimetable(timetable) {
         set(() => ({ timetable }));
+      },
+      updatePeriod(day, periodId, patch) {
+        set((s) => ({
+          timetable: {
+            ...s.timetable,
+            [day]: s.timetable[day].map((p) => (p.id === periodId ? { ...p, ...patch } : p)),
+          },
+        }));
       },
 
       setAttendanceStatus(date, periodId, subjectId, status) {
@@ -325,6 +340,12 @@ export const useStore = create(
       },
       setRemindersEnabled(remindersEnabled) {
         set((s) => ({ settings: { ...s.settings, remindersEnabled } }));
+      },
+      setAttendanceMode(attendanceMode) {
+        set((s) => ({ settings: { ...s.settings, attendanceMode } }));
+      },
+      setCollegeLocation(collegeLocation) {
+        set((s) => ({ settings: { ...s.settings, collegeLocation } }));
       },
     }),
     {
