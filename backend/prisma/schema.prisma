@@ -19,9 +19,10 @@ model User {
 
   subjects    Subject[]
   attendance  Attendance[]
-  geofences      Geofence[]
-  cgpaSession    CgpaSession?
-  ocrCorrections OcrCorrection[]
+  geofences            Geofence[]
+  cgpaSession          CgpaSession?
+  ocrCorrections       OcrCorrection[]
+  predictionCorrections PredictionCorrection[]
 }
 
 model Subject {
@@ -33,16 +34,19 @@ model Subject {
   teacher    String?
   credits    Int?
   courseType String? // theory | lab | practical
-  roomNumber String?
-  color      String?
-  tags       String? // JSON-encoded string array
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  roomNumber        String?
+  color             String?
+  tags              String? // JSON-encoded string array
+  commencementDate  String? // YYYY-MM-DD — when this subject's classes started, for predictions
+  semesterWeeks     Int      @default(16)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
-  attendance     Attendance[]
-  syllabusBlocks SyllabusBlock[]
-  geofences      Geofence[]
-  schedules      ClassSchedule[]
+  attendance          Attendance[]
+  syllabusBlocks      SyllabusBlock[]
+  geofences           Geofence[]
+  schedules           ClassSchedule[]
+  predictionCorrections PredictionCorrection[]
 
   @@index([userId])
 }
@@ -133,6 +137,21 @@ model Geofence {
 
   @@index([userId])
   @@index([subjectId])
+}
+
+model PredictionCorrection {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subjectId       String
+  subject         Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  expectedBlockId String?
+  actualBlockId   String?
+  reason          String?
+  accuracyImpact  Float? // positive if the correction shows the prediction was roughly right, negative if far off
+  createdAt       DateTime @default(now())
+
+  @@index([userId, subjectId])
 }
 
 // A user's correction to a scan classification — checked before the

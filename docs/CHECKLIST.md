@@ -69,7 +69,18 @@ end of this file).
   /api/syllabus/confirm-blocks`, `GET /api/syllabus/:subjectId`
 - [x] `StudySchedule` table, one row auto-created per confirmed block
 - [x] Live-tested end-to-end via curl with a real generated PDF (FlateDecode-compressed, deflated via Node's zlib) through a real multipart HTTP upload — correctly extracted and block-split Unit 1 / Chapter 2 / Module 3, confirmed, and queried back with schedule status attached
-- [ ] Predictions (`predictionService.ts`, `/api/predictions/*`) — next up
+- [x] Predictions (`predictionService.ts`) — same linear-pace model as the
+  mobile predictor (weeks elapsed / semester weeks → expected block),
+  `POST /api/predictions/check/:subjectId` and `.../correct/:subjectId`.
+  `Subject` gains `commencementDate`/`semesterWeeks`, new
+  `PredictionCorrection` table tracks expected-vs-actual for an accuracy
+  score. Live-tested via curl: no-data case before blocks exist, correct
+  Unit 2 prediction at the 50%-through-semester mark with 4 blocks
+  (matches the mobile predictor's own test case exactly), and corrections
+  correctly raise `accuracy_percent`. Caught and fixed a real bug during
+  testing — `accuracy_improved` read `false` on the very first correction
+  ever because it compared against a `null` baseline instead of treating
+  no-data-yet as 0.
 
 ## Phase D — Location, geofencing & auto-attendance
 **Mobile** (`geofence.js`, `findCurrentPeriod.js`, `useAttendancePresence.js`):

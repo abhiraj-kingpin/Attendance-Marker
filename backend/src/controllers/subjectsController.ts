@@ -12,6 +12,8 @@ const subjectSchema = z.object({
   roomNumber: z.string().optional(),
   color: z.string().optional(),
   tags: z.array(z.string()).optional(),
+  commencementDate: z.string().optional(), // YYYY-MM-DD, drives class-progress predictions
+  semesterWeeks: z.number().int().positive().optional(),
 });
 
 export async function listSubjects(req: AuthedRequest, res: Response) {

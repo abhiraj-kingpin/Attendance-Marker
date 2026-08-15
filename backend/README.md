@@ -73,6 +73,8 @@ zero external calls, zero billing.
 | POST | `/api/syllabus/upload` | ✓ | Multipart `pdf_file` + `subject_id` → extracted text, keyword-detected syllabus section, Unit/Chapter/Module blocks |
 | POST | `/api/syllabus/confirm-blocks` | ✓ | Save reviewed blocks; auto-creates a `StudySchedule` row per block |
 | GET | `/api/syllabus/:subjectId` | ✓ | List a subject's saved blocks with their study schedule status |
+| POST | `/api/predictions/check/:subjectId` | ✓ | Expected syllabus block right now, given the subject's `commencementDate`/`semesterWeeks` |
+| POST | `/api/predictions/correct/:subjectId` | ✓ | Report the actual block; feeds into `accuracy_percent` on future checks |
 
 Geofence request/response bodies use `snake_case` (`subject_id`,
 `room_number`, `radius_meters`, ...) — the rest of the API is camelCase;
