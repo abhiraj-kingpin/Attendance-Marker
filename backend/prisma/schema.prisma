@@ -19,8 +19,9 @@ model User {
 
   subjects    Subject[]
   attendance  Attendance[]
-  geofences   Geofence[]
-  cgpaSession CgpaSession?
+  geofences      Geofence[]
+  cgpaSession    CgpaSession?
+  ocrCorrections OcrCorrection[]
 }
 
 model Subject {
@@ -118,6 +119,20 @@ model Geofence {
 
   @@index([userId])
   @@index([subjectId])
+}
+
+// A user's correction to a scan classification — checked before the
+// heuristics on future scans, and kept as a record of where the
+// classifier gets it wrong.
+model OcrCorrection {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  originalText  String
+  correctedType String // subject | teacher | break | room | time
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
 }
 
 // Caches fetched CGPA data. Deliberately holds no GGSIPU credentials —

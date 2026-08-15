@@ -68,6 +68,8 @@ zero external calls, zero billing.
 | POST | `/api/schedule` | ✓ | Add a weekly class time to a subject (`day_of_week`, `start_time`, `end_time`) |
 | GET | `/api/schedule/:subjectId` | ✓ | List a subject's weekly class times |
 | POST | `/api/attendance/auto-mark` | ✓ | Given `user_latitude`+`user_longitude`, marks present for every subject whose geofence you're in AND that has a class scheduled right now AND isn't already marked today |
+| POST | `/api/ocr/scan-timetable` | ✓ | Multipart `image_file` → OCR (Tesseract) + subject/teacher/room/break classification with confidence scores |
+| POST | `/api/ocr/confirm-timetable` | ✓ | Save reviewed subjects, and any corrections (checked before the classifier next time) |
 
 Geofence request/response bodies use `snake_case` (`subject_id`,
 `room_number`, `radius_meters`, ...) — the rest of the API is camelCase;

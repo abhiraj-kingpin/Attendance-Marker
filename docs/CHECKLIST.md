@@ -6,6 +6,11 @@ still pending across sessions. See `docs/ROADMAP-PLUS.md` for the two
 deliberate deviations from the spec (GGSIPU login, location attendance) and
 why.
 
+Two codebases are being built against the same spec in parallel:
+**`mobile/`** (the shipped, local-only React Native app) and **`backend/`**
+(an optional server, not yet wired to the mobile app — see the note at the
+end of this file).
+
 ## Phase A — Backend foundation
 - [x] Express + TypeScript project scaffold (`backend/`)
 - [x] Prisma schema: User, Subject, Attendance, SyllabusBlock, Geofence, CgpaSession
@@ -13,117 +18,118 @@ why.
 - [x] Subjects CRUD API
 - [x] Attendance mark/list/stats API
 - [x] End-to-end smoke test (signup → subject → attendance → stats)
-- [x] Geofence CRUD + location-check API (`backend/src/services/
-  locationService.ts`) — runs on a hardcoded college list (MAIT, GGSIPU,
-  DTU) plus plain Haversine math, **zero external API calls, zero
-  billing**. (Briefly built against Google's Geocoding/Distance Matrix
-  REST APIs first; those needed manual API-activation in Google Cloud
-  Console which added friction for no real benefit here, so replaced with
-  this simpler approach.) Full CRUD (create/list/update/delete) plus
-  location-check all live-tested via curl end-to-end.
 - [ ] Google OAuth login
 - [ ] Phone number OTP login
 - [ ] Deploy to a real Postgres host (needs you to provision one)
 
 ## Phase B — Timetable OCR classification
+**Mobile** (`classifyTimetableEntry.js`, `parseTimetableText.js`):
 - [x] Classifier: subject vs teacher vs room vs break-activity, with a confidence score
-- [x] Break-activity blocklist (Library, NCC, Sports, Lunch, Gym, ...)
-- [x] Room number pattern extraction (e.g. "431", "A204", "LT-2")
-- [x] Teacher name pattern extraction (Dr./Prof./Mr./Ms./Er. prefixes)
+- [x] Break-activity blocklist, room/teacher pattern extraction
 - [x] Merge multi-line OCR cells (teacher/room on their own line attach to the subject above)
-- [x] Confidence-scored review UI — flags low-confidence and activity-like entries for confirmation
-- [x] Learning system — rejected activities remembered (`learnActivity`) and checked first on future scans
-- [x] Known-subjects dictionary — existing subjects matched with high confidence
+- [x] Confidence-scored review UI, learning system (`learnActivity`), known-subjects dictionary
 - [x] Unit tests (17 constructed cases, all passing)
-- [ ] **Tuned against a real timetable photo** — still needed; heuristics only verified against constructed examples so far
-- [ ] Subject code pattern validation (beyond the current all-caps heuristic)
-- [x] Subject customization — custom tags (comma-separated, shown as pills) and a free-text notes field, added to the manual Add/Edit subject sheet
-- [ ] Auto-fetch subject metadata from a college database — no such API exists to query
+- [ ] **Tuned against a real timetable photo** — still needed; heuristics only verified against constructed examples
+- [x] Subject customization — tags, notes, teacher, room fields
+
+**Backend** (`ocrService.ts`, `POST /api/ocr/scan-timetable` + `/confirm-timetable`):
+- [x] Same classification approach, ported to TypeScript, real Tesseract.js OCR
+- [x] `OcrCorrection` table remembers rejected classifications
+- [x] **Most rigorously tested piece built this session** — verified against
+  a *real generated image* through *real Tesseract OCR* through a *real
+  multipart HTTP upload*, not just typed text. Correctly separated 3
+  subjects, 2 teachers, and all 3 break activities (Library/NCC/Lunch —
+  the original bug case) from one test image, zero confirmation flags
+  needed, subjects saved with teacher/room intact.
+- Note: `mobile/`'s scan is deliberately on-device only ("the photo never
+  leaves your phone" is shown in its UI) — this backend endpoint is a
+  separate, optional capability the shipped app doesn't currently call.
 
 ## Phase C — Syllabus PDF extraction + class predictions
-- [x] PDF file picker (`expo-document-picker`) + text extraction
-- [x] Keyword-based section detection, generalized to Unit/Chapter/Module (was Unit-only)
-- [x] Split into editable study blocks, linked to a subject (reuses existing paste-review flow)
-- [x] Prediction engine (weeks elapsed → expected unit covered), with ahead/behind/on-track status
-- [x] Prediction correction — inferred from which unit's topics you've actually started ticking off
-- [x] Progress banner on each subject's syllabus card (expected vs actual)
-- [ ] OCR fallback for scanned/handwritten PDFs — out of scope for now, see note below
-- [ ] Dedicated full-screen progress dashboard (currently a compact per-card banner, not a separate screen)
+**Mobile** (`extractPdfText.js`, `predictSyllabusProgress.js`):
+- [x] PDF file picker + text extraction (self-contained: byte-level PDF
+  parsing + `pako` for FlateDecode, no DOM dependency, avoiding
+  `pdfjs-dist`'s browser-API assumptions that commonly break under Metro)
+- [x] Keyword-based section detection, generalized to Unit/Chapter/Module
+- [x] Prediction engine (weeks elapsed → expected unit), ahead/behind/on-track status, correction inferred from ticked-off topics
+- [x] Progress banner per subject
+- [x] Unit-tested (extraction against synthetic PDFs, predictions against several date/pace scenarios)
+- [ ] **Not yet confirmed on a real device** — `pako` in Hermes and the document picker's native behavior are the unverified pieces
+- [ ] OCR fallback for scanned/handwritten PDFs — out of scope; not practical on-device at any real page count
 
-**PDF extraction implementation note:** built as a small self-contained
-extractor (`extractPdfText.js`) — byte-level PDF object parsing + `pako`
-for FlateDecode stream decompression, both pure JS with no DOM
-dependency, rather than pulling in `pdfjs-dist` (relies on browser APIs
-that don't reliably exist in React Native's JS engine, and is a common
-source of Metro-bundling breakage). Unit-tested against synthetic PDFs
-covering uncompressed streams, FlateDecode-compressed streams, `Tj`/`TJ`
-operators, kerning-based word-space detection, and escaped characters —
-all passing. It handles typeset (real, non-scanned) PDFs, which covers
-the realistic case for an official syllabus document; a genuinely
-scanned/handwritten 800-page PDF is out of scope — OCR'ing that many
-pages on-device isn't practical regardless of library choice. **Not yet
-confirmed against a real device** — the JS logic is Node-verified and the
-app compiles/bundles clean, but `pako` running inside Hermes and the
-document picker's real native behavior need an actual on-device test.
+**Backend** — not started (`syllabusService.ts`, `predictionService.ts`,
+`study_schedule`/`syllabus_blocks` tables, `/api/syllabus/*`,
+`/api/predictions/*`). Next up.
 
-Note: `mobile/` already had a lighter version of syllabus tracking —
-paste-text-and-split-into-units (`PasteSyllabusModal.js`,
-`parseSyllabusText.js`) — built in an earlier session. This phase extended
-that with PDF upload and the prediction engine rather than replacing it.
+## Phase D — Location, geofencing & auto-attendance
+**Mobile** (`geofence.js`, `findCurrentPeriod.js`, `useAttendancePresence.js`):
+- [x] College location capture via device GPS (not a typed name + Geocoding API)
+- [x] Building-level geofence (Haversine, unit-tested against known reference distances)
+- [x] Per-period class times — added an optional start/end time editor (periods had no time data at all before this)
+- [x] Confirmation prompt when near campus during a scheduled class (`Alert.alert`, not silent auto-mark — see the deviation in ROADMAP-PLUS.md)
+- [x] Settings: Manual/Partial/Automatic mode toggle, geofence radius
+- [ ] **Foreground-only** — checks on app-open + every 5 min while open; real background tracking needs `expo-task-manager` + an Android foreground service, not attempted
+- [ ] System-tray notification on confirmation — currently in-app only, consistent with the foreground-only limitation
 
-## Phase D — Location & building-level attendance prompts
-- [x] College location capture — via device GPS ("stand here, tap Capture"), **not** a typed name + Google Geocoding API, so the Maps API key is no longer a blocker for this feature. The key would only add a "type your college's name" convenience on top later.
-- [x] Building-level geofence (Haversine distance, unit-tested against known reference distances)
-- [x] Per-period class times (start/end) — timetable periods had no time data at all before this; added an optional time editor per period, since presence checking needs to know when a class is happening
-- [x] Confirmation prompt when near campus during a scheduled class (`Alert.alert`, not silent auto-mark — see deviation)
-- [x] Settings: Manual/Partial/Automatic mode toggle, geofence radius (defaults 150m, re-capturable)
-- [ ] **Foreground-only** — checks on app-open and every 5 minutes while the app stays open. True background tracking (checking while the app is closed) needs `expo-task-manager` + an Android foreground service, a materially larger and riskier native integration not yet attempted — flagging this honestly rather than claiming background coverage that isn't there.
-- [ ] Notification (system tray) on confirmation — currently an in-app `Alert`, not a push/local notification, so it only fires while the app is open (consistent with the foreground-only limitation above)
-- [x] Backend auto-mark endpoint (`POST /api/attendance/auto-mark`,
-  `attendanceService.ts`) — marks present for every subject whose geofence
-  you're in AND that has a `ClassSchedule` entry active right now AND
-  isn't already marked today. Added `ClassSchedule` (weekly class times per
-  subject — the backend had none before this) and `geofenceId`/location
-  fields on `Attendance`. Live-tested via curl: marks once, refuses to
-  double-mark on a second call the same day, stays empty when outside the
-  geofence, stays empty with no schedule at all, stays empty when a
-  schedule exists but its time window doesn't cover now. Not yet wired to
-  the mobile app — `mobile/`'s own `useAttendancePresence.js` does the
-  equivalent entirely client-side and doesn't call this backend at all
-  currently; the two are parallel implementations, not connected.
+**Backend** (`locationService.ts`, `attendanceService.ts`):
+- [x] Geofence CRUD + location-check API — hardcoded college list (MAIT,
+  GGSIPU, DTU) + plain Haversine, **zero external API calls, zero
+  billing**. (Briefly built against Google's Geocoding/Distance Matrix
+  REST APIs first; those needed manual API-activation in Cloud Console for
+  no real benefit here, so replaced.)
+- [x] `ClassSchedule` table (weekly class times per subject — the backend
+  had no schedule concept at all before this)
+- [x] `POST /api/attendance/auto-mark` — marks present for every subject
+  whose geofence you're in AND has an active `ClassSchedule` entry AND
+  isn't already marked today
+- [x] Live-tested via curl: full geofence CRUD, marks once, refuses to
+  double-mark same day, stays empty outside the geofence / with no
+  schedule / outside the schedule's time window
+- Not wired to `mobile/` — its `useAttendancePresence.js` does the
+  equivalent entirely client-side; the two are parallel, unconnected
+  implementations right now.
 
 ## Phase E — GGSIPU CGPA integration
-- [x] In-app WebView (`react-native-webview`) loading the real `https://examweb.ggsipu.ac.in/web/login.jsp` — login is GGSIPU's own rendered page, credentials never touch app or backend code
-- [x] Generic table/CGPA-pattern extraction from the currently displayed page, shown as a raw review screen
-- [x] Snapshot cached locally (`cgpaSnapshot` in the store — holds no credentials, just what was visible at extraction time)
-- [ ] Structured CGPA dashboard (trend chart, subject-by-subject) — not built; the existing manual GPA screen already covers this, snapshot is a cross-check aid, not a replacement
+**Mobile** (`CgpaPortalModal.js`) — the only implementation; no backend
+version was built (see the deviation below):
+- [x] In-app WebView loading the real `examweb.ggsipu.ac.in` login page directly — credentials never touch app or backend code
+- [x] Generic table/CGPA-pattern extraction, shown as a raw review screen
+- [x] Snapshot cached locally (holds no credentials)
+- [ ] Structured CGPA dashboard — the existing manual GPA screen covers this; snapshot is a cross-check aid
 - [ ] Export to PDF
 
-**Honesty note:** `examweb.ggsipu.ac.in` refuses connections from outside
-India (confirmed — every fetch attempt while building this got
-`ECONNREFUSED`), so the real page's exact HTML structure could not be
-inspected or tested against while building this. The extraction script is
-deliberately generic (grab every `<table>`, regex-search for "CGPA"/"SGPA"
-followed by a number) rather than targeting specific field IDs that were
-never actually seen — it surfaces raw content for you to read and
-cross-check, not a claim of precise auto-parsed fields. **Needs a real
-on-device test with real GGSIPU credentials to confirm the extraction
-finds anything useful at all** — this is the least-verified piece built so
-far this session.
+**Deliberately not built:** a backend service that receives a user's
+GGSIPU password (even encrypted) and logs into the portal on their
+behalf. `examweb.ggsipu.ac.in` also refuses connections from outside
+India (confirmed via repeated fetch attempts while building this), so its
+exact page structure couldn't be inspected either way — the mobile
+extraction is deliberately generic rather than targeting field IDs that
+were never actually seen. **Needs a real on-device test with real
+credentials** — the least-verified piece built this session.
 
 ## Phase F — Admin dashboard & polish
-- [ ] Web dashboard: active users, attendance stats, error logs
-- [ ] Automatic / Partial / Manual mode toggle
-- [ ] Onboarding tutorial animations
-- [ ] Notification preference screen
+- [ ] Web dashboard: active users, attendance stats, OCR/geo health, error logs
+- [ ] Geofence management UI, users list, settings panel
+- [ ] `GET /api/admin/analytics`, `/api/admin/attendance-log`, `/api/admin/geofences`
+- [ ] Onboarding tutorial animations (mobile)
 - [ ] Multi-device / spoofing sanity checks on attendance records
 
+**Deliberately not built:** a second, parallel React Native mobile app.
+`mobile/` already exists as the real, shipped v1.0.0 app — a second Expo
+project calling these same APIs would fork the product in two rather than
+extend it.
+
 ## Already shipped before this checklist existed (v1.0.0, local-only)
-- [x] Timetable scan (basic, now upgraded by Phase B)
-- [x] Manual attendance marking, configurable target %
-- [x] Leave/bunk planning
+- [x] Timetable scan (basic, now upgraded by Phase B), manual attendance, configurable target %
+- [x] Leave/bunk planning, exam countdown
 - [x] Syllabus paste-and-split into units
-- [x] Exam countdown
 - [x] GPA/SGPA calculator (GGSIPU Ordinance 11, manual entry)
-- [x] Light/dark theme, font size, free-pick accent color
-- [x] Local reminder notification for unmarked attendance
+- [x] Light/dark theme, font size, free-pick accent color, local reminder notification
+
+## Mobile ↔ backend: not connected yet
+Everything backend-side (auth, subjects sync, auto-attendance, server OCR,
+geofencing) is live-tested via curl but **the shipped mobile app doesn't
+call any of it** — `mobile/` remains fully local-only/offline by design.
+Wiring them together (optional account-based sync, letting the backend's
+auto-mark and OCR endpoints actually back the app) is its own decision and
+hasn't been asked for yet.
