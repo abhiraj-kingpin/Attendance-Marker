@@ -178,7 +178,14 @@ credentials** — the least-verified piece built this session.
   genuinely needs a human: opening it and clicking through.
 - [ ] Map visualization on the Geofences page — marked optional in the
   spec, not built (table + form only)
-- [ ] Onboarding tutorial animations (mobile) — not started
+- [x] Onboarding tutorial (`OnboardingScreen.js`) — 6-step swipeable
+  walkthrough (scan timetable, syllabus PDF, location prompts,
+  predictions, GPA, wrap-up), progress dots, Skip, native `Animated` API
+  pulsing icons rather than Lottie (no real Lottie JSON assets were
+  available to use honestly). Shows once after the splash
+  (`settings.hasSeenOnboarding`, persisted), replayable from Settings →
+  Help & feedback. Gradle build succeeds; **not yet click-tested on a
+  device** — this is the next thing to check when the phone connects.
 
 Two deliberate deviations, both explained to you before starting:
 - **Vite instead of Create React App** — CRA is deprecated by the React

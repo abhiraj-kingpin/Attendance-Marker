@@ -69,6 +69,7 @@ export const initialState = {
     // for why (phone GPS can't reliably tell rooms/floors apart).
     attendanceMode: 'manual',
     collegeLocation: null, // { latitude, longitude, radiusM }
+    hasSeenOnboarding: false,
   },
 };
 
@@ -349,6 +350,9 @@ export const useStore = create(
       },
       setAttendanceMode(attendanceMode) {
         set((s) => ({ settings: { ...s.settings, attendanceMode } }));
+      },
+      setHasSeenOnboarding(hasSeenOnboarding) {
+        set((s) => ({ settings: { ...s.settings, hasSeenOnboarding } }));
       },
       setCollegeLocation(collegeLocation) {
         set((s) => ({ settings: { ...s.settings, collegeLocation } }));

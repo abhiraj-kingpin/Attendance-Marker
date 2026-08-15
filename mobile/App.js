@@ -7,12 +7,16 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import RootNavigator from './src/navigation/RootNavigator';
 import IntroScreen from './src/screens/IntroScreen';
+import OnboardingScreen from './src/screens/OnboardingScreen';
 import { useThemeVars, useColorSchemeSetting } from './src/lib/useTheme';
 import { useReminderSync } from './src/lib/useReminderSync';
 import { useAttendancePresence } from './src/lib/useAttendancePresence';
+import { useStore } from './src/store/useStore';
 
 export default function App() {
   const [showIntro, setShowIntro] = useState(true);
+  const hasSeenOnboarding = useStore((s) => s.settings.hasSeenOnboarding);
+  const setHasSeenOnboarding = useStore((s) => s.setHasSeenOnboarding);
   const themeVars = useThemeVars();
   const scheme = useColorSchemeSetting();
   useReminderSync();
@@ -31,7 +35,13 @@ export default function App() {
         <SafeAreaProvider>
           <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
           <View style={{ flex: 1, backgroundColor: scheme === 'dark' ? '#131314' : '#FFFFFF' }}>
-            {showIntro ? <IntroScreen onFinish={() => setShowIntro(false)} /> : <RootNavigator />}
+            {showIntro ? (
+              <IntroScreen onFinish={() => setShowIntro(false)} />
+            ) : !hasSeenOnboarding ? (
+              <OnboardingScreen onFinish={() => setHasSeenOnboarding(true)} />
+            ) : (
+              <RootNavigator />
+            )}
           </View>
         </SafeAreaProvider>
       </View>

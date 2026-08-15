@@ -161,6 +161,7 @@ export default function SettingsSection() {
   const setRemindersEnabled = useStore((s) => s.setRemindersEnabled);
   const setAttendanceMode = useStore((s) => s.setAttendanceMode);
   const setCollegeLocation = useStore((s) => s.setCollegeLocation);
+  const setHasSeenOnboarding = useStore((s) => s.setHasSeenOnboarding);
   const { colors } = useTheme();
 
   const [locating, setLocating] = useState(false);
@@ -310,6 +311,20 @@ export default function SettingsSection() {
       </SettingsCard>
 
       <SettingsCard icon="help" title="Help & feedback">
+        <TouchableOpacity
+          onPress={() => setHasSeenOnboarding(false)}
+          className="flex-row items-center gap-3 py-1 min-h-11 mb-1"
+          accessibilityRole="button"
+        >
+          <View className="w-9 h-9 rounded-full items-center justify-center bg-g-blue-container">
+            <MaterialIcons name="play-circle-outline" size={17} color={colors.gBlueDark} />
+          </View>
+          <View className="flex-1 min-w-0">
+            <Text className="text-sm font-medium text-on-surface">Replay tutorial</Text>
+            <Text className="text-xs text-on-surface-tertiary" numberOfLines={1}>See the intro walkthrough again</Text>
+          </View>
+          <MaterialIcons name="chevron-right" size={20} color={colors.onSurfaceTertiary} />
+        </TouchableOpacity>
         <TouchableOpacity
           onPress={contactSupport}
           className="flex-row items-center gap-3 py-1 min-h-11"
