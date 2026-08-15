@@ -13,11 +13,14 @@ why.
 - [x] Subjects CRUD API
 - [x] Attendance mark/list/stats API
 - [x] End-to-end smoke test (signup → subject → attendance → stats)
-- [x] Geofence CRUD + location-check API, backed by Google's Geocoding and
-  Distance Matrix REST APIs (`backend/src/services/locationService.ts`) —
-  geocode-by-name, plain-coordinate geofence creation, and the Haversine
-  in/out check all live-tested via curl; only the actual Google API round
-  trip is unverified pending your `GOOGLE_MAPS_API_KEY` in `backend/.env`
+- [x] Geofence CRUD + location-check API (`backend/src/services/
+  locationService.ts`) — runs on a hardcoded college list (MAIT, GGSIPU,
+  DTU) plus plain Haversine math, **zero external API calls, zero
+  billing**. (Briefly built against Google's Geocoding/Distance Matrix
+  REST APIs first; those needed manual API-activation in Google Cloud
+  Console which added friction for no real benefit here, so replaced with
+  this simpler approach.) Full CRUD (create/list/update/delete) plus
+  location-check all live-tested via curl end-to-end.
 - [ ] Google OAuth login
 - [ ] Phone number OTP login
 - [ ] Deploy to a real Postgres host (needs you to provision one)

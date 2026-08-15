@@ -90,8 +90,9 @@ model Geofence {
   building   String?
   latitude   Float
   longitude  Float
-  radiusM    Float    @default(150)
+  radiusM    Float    @default(50)
   createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@index([userId])
   @@index([subjectId])
