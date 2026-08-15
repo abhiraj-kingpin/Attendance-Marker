@@ -38,8 +38,12 @@ npm run dev              # http://localhost:4000
 
 These are external accounts/keys I can't provision on your behalf:
 
-- **Google Maps / Geocoding API key** — needed to resolve a college name to
-  coordinates for geofencing (Phase D).
+- **Google Maps / Geocoding API key** — set `GOOGLE_MAPS_API_KEY` in your
+  local `backend/.env` (never commit it — the file is gitignored). Only
+  needed for `POST /api/geofences` with `collegeName` (geocode-by-name) —
+  the actual geofence check (`isUserInGeofence`) is plain Haversine math
+  and works with no key at all, same as the mobile app's own location
+  setup which captures coordinates from the device's GPS directly.
 - **A real Postgres instance** (e.g. Railway, Render, Supabase, or your own
   server) — only needed when you're ready to deploy; local dev doesn't need
   it.
@@ -60,3 +64,6 @@ These are external accounts/keys I can't provision on your behalf:
 | POST | `/api/attendance` | ✓ | Mark attendance (upserts per subject+date) |
 | GET | `/api/attendance` | ✓ | List attendance, optional `?subjectId=` |
 | GET | `/api/attendance/stats` | ✓ | Per-subject present/total/percentage |
+| POST | `/api/geofences` | ✓ | Create a geofence — either `latitude`+`longitude` directly, or `collegeName` to resolve via Geocoding API |
+| GET | `/api/geofences/:subjectId` | ✓ | List geofences for a subject |
+| POST | `/api/location/check` | ✓ | Given `latitude`+`longitude`, which of your geofences (if any) you're currently inside |

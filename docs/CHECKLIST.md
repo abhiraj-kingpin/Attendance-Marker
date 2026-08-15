@@ -13,6 +13,11 @@ why.
 - [x] Subjects CRUD API
 - [x] Attendance mark/list/stats API
 - [x] End-to-end smoke test (signup → subject → attendance → stats)
+- [x] Geofence CRUD + location-check API, backed by Google's Geocoding and
+  Distance Matrix REST APIs (`backend/src/services/locationService.ts`) —
+  geocode-by-name, plain-coordinate geofence creation, and the Haversine
+  in/out check all live-tested via curl; only the actual Google API round
+  trip is unverified pending your `GOOGLE_MAPS_API_KEY` in `backend/.env`
 - [ ] Google OAuth login
 - [ ] Phone number OTP login
 - [ ] Deploy to a real Postgres host (needs you to provision one)

@@ -86,12 +86,15 @@ model Geofence {
   subjectId  String?
   subject    Subject? @relation(fields: [subjectId], references: [id], onDelete: SetNull)
   label      String // e.g. "MAIT main building"
+  roomNumber String?
+  building   String?
   latitude   Float
   longitude  Float
   radiusM    Float    @default(150)
   createdAt  DateTime @default(now())
 
   @@index([userId])
+  @@index([subjectId])
 }
 
 // Caches fetched CGPA data. Deliberately holds no GGSIPU credentials —
