@@ -6,69 +6,126 @@ import { useTheme } from '../lib/useTheme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-const STEPS = [
-  {
-    icon: 'document-scanner',
-    title: 'Scan your timetable',
-    description:
-      "Point your camera at a printed timetable — subjects, teachers, and rooms are picked out automatically. Text recognition runs on your phone; the photo never leaves it.",
-  },
-  {
-    icon: 'picture-as-pdf',
-    title: 'Upload your syllabus',
-    description:
-      'Paste the text or upload a PDF and it’s split into units automatically, so you can track what’s been covered as you go.',
-  },
-  {
-    icon: 'location-on',
-    title: "Never forget to mark attendance",
-    description:
-      'Turn on Partial or Automatic mode in Settings, and the app can gently prompt you to confirm attendance when you’re near college during a scheduled class. It only ever asks — it never marks anything silently.',
-  },
-  {
-    icon: 'trending-up',
-    title: 'See if you’re on track',
-    description:
-      'Once your syllabus is in, the app estimates which unit your class should be on by now — so you always know if you’re ahead or behind.',
-  },
-  {
-    icon: 'calculate',
-    title: 'Track your GPA',
-    description:
-      'Enter your marks each semester for an instant SGPA/CGPA under GGSIPU’s Ordinance 11 grading, plus a quick cross-check against the real portal.',
-  },
-  {
-    icon: 'check-circle',
-    title: "You're all set",
-    description:
-      'Everything you enter stays on this device — no account, no backend, nothing shared with anyone. Let’s add your first subject.',
-  },
-];
-
-function StepIcon({ name, color, background }) {
-  const pulse = useRef(new Animated.Value(0)).current;
+// A small looping ripple, like a finger tapping the highlighted element —
+// two rings expanding outward and fading, restarting on a delay.
+function TapRipple({ color }) {
+  const ripple = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 1, duration: 900, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0, duration: 900, easing: Easing.in(Easing.cubic), useNativeDriver: true }),
+        Animated.timing(ripple, { toValue: 1, duration: 1100, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+        Animated.delay(400),
+        Animated.timing(ripple, { toValue: 0, duration: 0, useNativeDriver: true }),
       ])
     );
     loop.start();
     return () => loop.stop();
   }, []);
 
-  const scale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.08] });
+  const scale = ripple.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1.8] });
+  const opacity = ripple.interpolate({ inputRange: [0, 0.7, 1], outputRange: [0.55, 0.15, 0] });
 
   return (
-    <View className="items-center justify-center mb-8" style={{ width: 140, height: 140 }}>
+    <View pointerEvents="none" style={{ position: 'absolute', right: -6, top: -6, width: 24, height: 24 }}>
       <Animated.View
-        className="items-center justify-center rounded-full"
-        style={{ width: 140, height: 140, backgroundColor: background, transform: [{ scale }] }}
+        style={{
+          width: 24,
+          height: 24,
+          borderRadius: 12,
+          backgroundColor: color,
+          transform: [{ scale }],
+          opacity,
+        }}
+      />
+      <View style={{ position: 'absolute', width: 10, height: 10, borderRadius: 5, top: 7, left: 7, backgroundColor: color }} />
+    </View>
+  );
+}
+
+// Wraps a mock UI fragment with a pulsing glow ring, so the step visibly
+// points at "this is the real element you'll tap" rather than a generic
+// icon floating on its own.
+function Spotlight({ children, glowColor }) {
+  const pulse = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1, duration: 800, easing: Easing.inOut(Easing.quad), useNativeDriver: false }),
+        Animated.timing(pulse, { toValue: 0, duration: 800, easing: Easing.inOut(Easing.quad), useNativeDriver: false }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, []);
+
+  const shadowOpacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.25, 0.55] });
+
+  return (
+    <View className="items-center justify-center py-10">
+      <Animated.View
+        style={{
+          borderRadius: 16,
+          borderWidth: 2,
+          borderColor: glowColor,
+          shadowColor: glowColor,
+          shadowOpacity,
+          shadowRadius: 12,
+          shadowOffset: { width: 0, height: 0 },
+          elevation: 6,
+        }}
       >
-        <MaterialIcons name={name} size={64} color={color} />
+        <View style={{ position: 'relative' }}>
+          {children}
+          <TapRipple color={glowColor} />
+        </View>
       </Animated.View>
+    </View>
+  );
+}
+
+function CalloutBubble({ text, colors }) {
+  return (
+    <View className="items-center px-6">
+      <View className="rounded-2xl px-4 py-3 mb-2" style={{ backgroundColor: colors.gBlueContainer }}>
+        <Text className="text-sm font-medium text-center" style={{ color: colors.gBlueDark }}>{text}</Text>
+      </View>
+      <View
+        style={{
+          width: 0,
+          height: 0,
+          borderLeftWidth: 8,
+          borderRightWidth: 8,
+          borderTopWidth: 8,
+          borderLeftColor: 'transparent',
+          borderRightColor: 'transparent',
+          borderTopColor: colors.gBlueContainer,
+        }}
+      />
+    </View>
+  );
+}
+
+function MockPill({ label, active, colors }) {
+  return (
+    <View
+      className="rounded-lg px-3 py-2.5 border min-w-20 items-center"
+      style={{ backgroundColor: active ? colors.gBlueContainer : colors.surface, borderColor: active ? colors.gBlue : colors.outlineVariant }}
+    >
+      <Text className="text-xs font-medium" style={{ color: active ? colors.gBlueDark : colors.onSurfaceTertiary }}>{label}</Text>
+    </View>
+  );
+}
+
+function MockButton({ icon, label, colors }) {
+  return (
+    <View
+      className="flex-row items-center justify-center gap-2 rounded-lg border py-3 px-4"
+      style={{ borderColor: colors.outlineVariant, backgroundColor: colors.surface }}
+    >
+      <MaterialIcons name={icon} size={16} color={colors.gBlue} />
+      <Text className="text-sm font-medium" style={{ color: colors.gBlue }}>{label}</Text>
     </View>
   );
 }
@@ -78,6 +135,61 @@ export default function OnboardingScreen({ onFinish }) {
   const { colors } = useTheme();
   const scrollRef = useRef(null);
   const [index, setIndex] = useState(0);
+
+  const STEPS = [
+    {
+      title: 'Scan your timetable',
+      description: 'Text recognition runs on your phone — the photo never leaves it.',
+      callout: 'Tap here to scan a printed timetable',
+      mock: <MockButton icon="document-scanner" label="Scan a timetable photo" colors={colors} />,
+    },
+    {
+      title: 'Upload your syllabus',
+      description: 'It’s split into units automatically, so you can track what’s been covered.',
+      callout: 'Tap here to upload a syllabus PDF',
+      mock: <MockButton icon="picture-as-pdf" label="Or upload a PDF" colors={colors} />,
+    },
+    {
+      title: "Never forget to mark attendance",
+      description: 'It only ever prompts you to confirm — it never marks attendance silently.',
+      callout: 'Turn on Partial or Automatic mode in Settings',
+      mock: (
+        <View className="flex-row gap-2">
+          <MockPill label="Manual" colors={colors} />
+          <MockPill label="Partial" active colors={colors} />
+          <MockPill label="Automatic" colors={colors} />
+        </View>
+      ),
+    },
+    {
+      title: "See if you're on track",
+      description: 'Once your syllabus is in, it estimates which unit your class should be on by now.',
+      callout: 'Check here on each subject’s Syllabus card',
+      mock: (
+        <View className="flex-row items-center gap-2 rounded-lg px-3 py-2.5" style={{ backgroundColor: colors.gGreenContainer }}>
+          <MaterialIcons name="trending-up" size={16} color={colors.gGreenDark} />
+          <Text className="text-xs font-medium" style={{ color: colors.gGreenDark }}>Expected around Unit 2. Right on pace.</Text>
+        </View>
+      ),
+    },
+    {
+      title: 'Track your GPA',
+      description: 'GGSIPU Ordinance 11 grading, plus a quick cross-check against the real portal.',
+      callout: 'Tap here on the GPA tab',
+      mock: <MockButton icon="sync" label="Cross-check with GGSIPU portal" colors={colors} />,
+    },
+    {
+      title: "You're all set",
+      description: 'Everything stays on this device — no account, no backend, nothing shared. Let’s add your first subject.',
+      callout: null,
+      mock: (
+        <View className="items-center justify-center rounded-full" style={{ width: 96, height: 96, backgroundColor: colors.gGreenContainer }}>
+          <MaterialIcons name="check-circle" size={48} color={colors.gGreenDark} />
+        </View>
+      ),
+    },
+  ];
+
   const isLast = index === STEPS.length - 1;
 
   function goTo(i) {
@@ -91,7 +203,7 @@ export default function OnboardingScreen({ onFinish }) {
   }
 
   return (
-    <View className="flex-1 bg-surface" style={{ paddingTop: insets.top }}>
+    <View className="flex-1 bg-surface-variant" style={{ paddingTop: insets.top }}>
       <View className="flex-row justify-end px-5 pt-2">
         <TouchableOpacity onPress={onFinish} accessibilityRole="button" className="px-3 py-2 min-h-11 justify-center">
           <Text className="text-sm font-medium text-on-surface-tertiary">Skip</Text>
@@ -107,10 +219,15 @@ export default function OnboardingScreen({ onFinish }) {
         scrollEventThrottle={16}
       >
         {STEPS.map((step, i) => (
-          <View key={i} style={{ width: SCREEN_WIDTH }} className="flex-1 items-center justify-center px-8">
-            <StepIcon name={step.icon} color={colors.gBlue} background={colors.gBlueContainer} />
-            <Text className="text-xl font-semibold text-on-surface text-center mb-3">{step.title}</Text>
-            <Text className="text-sm text-on-surface-secondary text-center leading-5">{step.description}</Text>
+          <View key={i} style={{ width: SCREEN_WIDTH }} className="flex-1 px-8">
+            <View className="flex-1 items-center justify-center">
+              {step.callout && <CalloutBubble text={step.callout} colors={colors} />}
+              <Spotlight glowColor={colors.gBlue}>{step.mock}</Spotlight>
+            </View>
+            <View className="mb-8">
+              <Text className="text-xl font-semibold text-on-surface text-center mb-2">{step.title}</Text>
+              <Text className="text-sm text-on-surface-secondary text-center leading-5">{step.description}</Text>
+            </View>
           </View>
         ))}
       </ScrollView>
