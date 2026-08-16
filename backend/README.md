@@ -94,6 +94,14 @@ dashboard, but nothing in this backend or in `mobile/` currently reads it
 to actually change behavior. It's storage + an admin UI for now, not
 enforcement.
 
+**Gemini (optional)**: set `GEMINI_API_KEY` in `backend/.env` (free tier at
+https://aistudio.google.com/apikey) to upgrade OCR classification and
+syllabus pacing from the built-in heuristics/equal-weighting to real LLM
+reasoning. Both fall back cleanly with no key — this is additive, not a
+requirement. `POST /api/ocr/scan-timetable` reports which one ran via
+`classification_method` (`"gemini"` or `"heuristic"`); predictions report
+`pacing_method` (`"llm_weighted"` or `"equal_weight"`) the same way.
+
 **Important fix**: Express 4 does not catch promise rejections thrown
 inside `async` route handlers — confirmed directly that an unhandled
 error in one crashes the *entire process*, not just the failing request.

@@ -128,6 +128,31 @@ extraction is deliberately generic rather than targeting field IDs that
 were never actually seen. **Needs a real on-device test with real
 credentials** — the least-verified piece built this session.
 
+## Gemini-backed classification & pacing (real LLM, not heuristics)
+Requested explicitly after being told the "AI/ML" features were actually
+hand-written heuristics + arithmetic (true at the time — see Phase B/C
+notes below). User chose Gemini over Claude for cost (free tier).
+
+- [x] `llmService.ts` — `classifyTimetableWithLLM()` sends raw OCR text to
+  Gemini (`gemini-3.7-flash`) with a JSON schema for structured
+  subject/teacher/break/time/room output; `estimateBlockWeights()` asks
+  Gemini to weight syllabus blocks by how much material each covers,
+  instead of assuming every block takes the class equally long.
+- [x] Both are additive, not replacements: `GEMINI_API_KEY` unset ->
+  clean fallback to the existing heuristic classifier / equal-weight
+  pacing, verified via curl (`classification_method: "heuristic"`,
+  `pacing_method: "equal_weight"`, identical results to before this was
+  added). Any Gemini failure (network, quota, malformed response) also
+  falls back rather than breaking the scan/prediction flow.
+- [ ] **The actual Gemini API call itself is unverified** — no key was
+  available while building this, so the fallback path is thoroughly
+  tested but the real LLM path has only been verified to compile and to
+  *not* run (correctly) without a key. Needs a real key + a live test the
+  moment one's available. Model name `gemini-3.7-flash` was picked from
+  what the installed SDK's type definitions reference as current
+  (non-preview) — not independently confirmed against Google's live model
+  list.
+
 ## Phase F — Admin dashboard & polish
 **Backend** (`isAdmin`/`requireAdmin`, `adminController.ts`):
 - [x] `GET /api/admin/analytics` — total/active users, today's attendance

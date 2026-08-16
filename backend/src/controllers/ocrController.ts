@@ -2,7 +2,8 @@ import { Response } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma';
 import { AuthedRequest } from '../middleware/auth';
-import { extractTimetableFromImage, classifyText } from '../services/ocrService';
+import { extractTimetableFromImage, classifyText, buildConfirmationList } from '../services/ocrService';
+import { classifyTimetableWithLLM, isLlmAvailable } from '../services/llmService';
 
 export async function scanTimetable(req: AuthedRequest & { file?: Express.Multer.File }, res: Response) {
   if (!req.file) return res.status(400).json({ error: 'No image_file uploaded' });
@@ -15,13 +16,27 @@ export async function scanTimetable(req: AuthedRequest & { file?: Express.Multer
     return res.status(422).json({ error: 'Could not read text from that image — try a clearer, well-lit photo.' });
   }
 
-  const { classified, requiresConfirmation } = classifyText(rawText);
+  // Gemini gets first pass if a key is configured — genuinely more capable
+  // at judging ambiguous/noisy OCR text than fixed regex rules. Falls back
+  // to the heuristic classifier on any failure (missing key, network
+  // error, quota, malformed response) so a scan never breaks over this.
+  let classified = await classifyTimetableWithLLM(rawText);
+  let usedLlm = classified != null;
+  let requiresConfirmation;
+  if (classified) {
+    requiresConfirmation = buildConfirmationList(classified);
+  } else {
+    ({ classified, requiresConfirmation } = classifyText(rawText));
+  }
+
   await prisma.ocrScanLog.create({ data: { userId: req.userId!, success: true } });
 
   res.json({
     raw_extracted: rawText,
     classified,
     requires_confirmation: requiresConfirmation,
+    classification_method: usedLlm ? 'gemini' : 'heuristic',
+    llm_available: isLlmAvailable(),
   });
 }
 

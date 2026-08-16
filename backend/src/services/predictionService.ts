@@ -1,4 +1,5 @@
 import { prisma } from '../lib/prisma';
+import { estimateBlockWeights } from './llmService';
 
 const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
 
@@ -8,6 +9,27 @@ function weeksBetween(fromISO: string, toISO: string): number {
   return Math.max(0, (to.getTime() - from.getTime()) / MS_PER_WEEK);
 }
 
+/**
+ * Maps a 0-1 pace ratio onto a block index. With equal weights (the
+ * default, and the fallback when no LLM weighting is available) this is
+ * the same straight-line ceil(paceRatio * count) - 1 as before. With
+ * content-derived weights, denser blocks get proportionally more of the
+ * ratio before the index advances, instead of assuming every block takes
+ * the same number of weeks.
+ */
+function pickExpectedIndex(blockCount: number, paceRatio: number, weights: number[] | null): number {
+  if (!weights) {
+    return Math.min(blockCount - 1, Math.max(0, Math.ceil(paceRatio * blockCount) - 1));
+  }
+  const total = weights.reduce((sum, w) => sum + w, 0);
+  let cumulative = 0;
+  for (let i = 0; i < weights.length; i++) {
+    cumulative += weights[i];
+    if (cumulative / total >= paceRatio) return i;
+  }
+  return blockCount - 1;
+}
+
 export interface PredictionResult {
   subject_id: string;
   expected_block: { id: string; title: string; content: string | null } | null;
@@ -15,14 +37,18 @@ export interface PredictionResult {
   weeks_elapsed: number | null;
   confidence: number;
   accuracy_percent: number | null;
+  pacing_method: 'llm_weighted' | 'equal_weight';
 }
 
 /**
- * Same linear-pace model as mobile/src/lib/predictSyllabusProgress.js:
- * weeks_elapsed / semester_weeks gives a rough completion ratio, mapped
- * onto the ordered block list. A straight-line model of real class
- * pacing, not a claim about what actually happened in the room — that's
- * exactly why /api/predictions/correct exists.
+ * Base model is the same linear pace as mobile/src/lib/predictSyllabusProgress.js:
+ * weeks_elapsed / semester_weeks gives a rough completion ratio. Which
+ * block that ratio lands on now optionally accounts for each block's
+ * relative content weight (see estimateBlockWeights, Gemini-backed) rather
+ * than assuming every block takes equally long — falls back to equal
+ * weighting with no key/on any failure. Either way this is a model of
+ * likely pacing, not a claim about what actually happened in the room —
+ * that's exactly why /api/predictions/correct exists.
  */
 export async function predictClassProgress(userId: string, subjectId: string, today: string = new Date().toISOString().slice(0, 10)): Promise<PredictionResult | null> {
   const subject = await prisma.subject.findFirst({ where: { id: subjectId, userId } });
@@ -38,13 +64,16 @@ export async function predictClassProgress(userId: string, subjectId: string, to
       weeks_elapsed: null,
       confidence: 0,
       accuracy_percent: await computeAccuracy(userId, subjectId),
+      pacing_method: 'equal_weight',
     };
   }
 
   const weeksElapsed = weeksBetween(subject.commencementDate, today);
   const semesterWeeks = subject.semesterWeeks || 16;
   const paceRatio = Math.min(1, weeksElapsed / semesterWeeks);
-  const expectedIndex = Math.min(blocks.length - 1, Math.max(0, Math.ceil(paceRatio * blocks.length) - 1));
+
+  const weights = await estimateBlockWeights(blocks.map((b) => ({ title: b.title, content: b.content })));
+  const expectedIndex = pickExpectedIndex(blocks.length, paceRatio, weights);
   const expectedBlock = blocks[expectedIndex];
 
   const confidence = Math.round(Math.max(30, 90 - weeksElapsed * 2));
@@ -56,6 +85,7 @@ export async function predictClassProgress(userId: string, subjectId: string, to
     weeks_elapsed: Math.round(weeksElapsed * 10) / 10,
     confidence,
     accuracy_percent: await computeAccuracy(userId, subjectId),
+    pacing_method: weights ? 'llm_weighted' : 'equal_weight',
   };
 }
 

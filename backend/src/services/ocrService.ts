@@ -83,7 +83,7 @@ export interface ClassifiedResult {
   rooms: Classification[];
 }
 
-const CONFIDENCE_THRESHOLD = 70;
+export const CONFIDENCE_THRESHOLD = 70;
 
 export interface ConfirmationNeeded {
   text: string;
@@ -91,26 +91,34 @@ export interface ConfirmationNeeded {
   reason: string;
 }
 
-/** Classifies every non-empty line of raw OCR text. */
+/** Flags low-confidence entries for user review — shared by both the heuristic and LLM classification paths. */
+export function buildConfirmationList(classified: ClassifiedResult): ConfirmationNeeded[] {
+  const requiresConfirmation: ConfirmationNeeded[] = [];
+  for (const entries of Object.values(classified)) {
+    for (const entry of entries) {
+      if (entry.confidence < CONFIDENCE_THRESHOLD) {
+        requiresConfirmation.push({
+          text: entry.text,
+          type: entry.type,
+          reason: entry.type === 'break' ? 'Might not actually be a break activity' : 'Low confidence classification',
+        });
+      }
+    }
+  }
+  return requiresConfirmation;
+}
+
+/** Classifies every non-empty line of raw OCR text using hand-written heuristics (no ML). */
 export function classifyText(text: string): { classified: ClassifiedResult; requiresConfirmation: ConfirmationNeeded[] } {
   const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
 
   const classified: ClassifiedResult = { subjects: [], teachers: [], breaks: [], times: [], rooms: [] };
-  const requiresConfirmation: ConfirmationNeeded[] = [];
 
   for (const line of lines) {
     const result = classifyLine(line);
     const bucket = `${result.type}s` as keyof ClassifiedResult;
     classified[bucket].push({ text: result.text, confidence: result.confidence, type: result.type });
-
-    if (result.confidence < CONFIDENCE_THRESHOLD) {
-      requiresConfirmation.push({
-        text: result.text,
-        type: result.type,
-        reason: result.type === 'break' ? 'Might not actually be a break activity' : 'Low confidence classification',
-      });
-    }
   }
 
-  return { classified, requiresConfirmation };
+  return { classified, requiresConfirmation: buildConfirmationList(classified) };
 }
